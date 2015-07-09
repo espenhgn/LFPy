@@ -10,9 +10,11 @@ import LFPy
 from matplotlib.collections import PolyCollection
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
-from allensdk.model.biophysical_perisomatic import runner 
-from allensdk.api.queries.biophysical_perisomatic_api import BiophysicalPerisomaticApi
-
+try:
+    from allensdk.model.biophysical_perisomatic import runner 
+    from allensdk.api.queries.biophysical_perisomatic_api import BiophysicalPerisomaticApi
+except ImportError as ie:
+    raise ie, 'install AllenSDK from http://alleninstitute.github.io/AllenSDK/'
 
 #fetch files from the Cell Type Database
 working_directory = 'neuronal_model'
