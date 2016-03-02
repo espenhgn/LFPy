@@ -15,7 +15,8 @@ import numpy as np
 
 def calc_lfp_choose(cell, x=0, y=0, z=0, sigma=0.3,
                     r_limit=None,
-                    timestep=None, t_indices=None, method='linesource'):
+                    timestep=None, t_indices=None, method='linesource',
+                    side_length=None, order=None):
     '''
     Determine which method to use, line-source for soma default
     
@@ -45,6 +46,43 @@ def calc_lfp_choose(cell, x=0, y=0, z=0, sigma=0.3,
         return calc_lfp_pointsource(cell, x=x, y=y, z=z, sigma=sigma,
                                     r_limit=r_limit,
                                     timestep=timestep, t_indices=t_indices)
+    elif method == 'som_as_point_periodic':
+        # Apply method using periodic boundary conditions in the (x,y) plane
+        # when computing the potential, meaning, for a cell, the contribution
+        # to the potential at a contact in r=(x,y,z) will be the sum
+        # E(x,y,z) = E(x,y,z) + \sum_i\in[-n...-1, 1...n] E(x+i*L,y,z)
+        #                     + \sum_j\in[-n...-1, 1...n] E(x,y+j*L,z), 
+        # where order n is an integer > 0, L is side length of grid
+        
+        E = []
+        E.append(calc_lfp_som_as_point(cell, x=x, y=y, z=z, sigma=sigma,
+                                       r_limit=r_limit,
+                                       timestep=timestep,
+                                       t_indices=t_indices))
+        for i in range(-order, 0):
+            E.append(calc_lfp_som_as_point(cell, x=x+i*side_length, y=y, z=z, sigma=sigma,
+                                        r_limit=r_limit,
+                                        timestep=timestep,
+                                        t_indices=t_indices))
+        for i in range(1, order+1):
+            E.append(calc_lfp_som_as_point(cell, x=x+i*side_length, y=y, z=z, sigma=sigma,
+                                        r_limit=r_limit,
+                                        timestep=timestep,
+                                        t_indices=t_indices))
+        for j in range(-order, 0):
+            E.append(calc_lfp_som_as_point(cell, x=x, y=y+j*side_length, z=z, sigma=sigma,
+                                        r_limit=r_limit,
+                                        timestep=timestep,
+                                        t_indices=t_indices))
+        for j in range(1, order+1):
+            E.append(calc_lfp_som_as_point(cell, x=x, y=y+j*side_length, z=z, sigma=sigma,
+                                        r_limit=r_limit,
+                                        timestep=timestep,
+                                        t_indices=t_indices))
+        return np.array(E).sum(axis=0)
+    else:
+        raise NotImplementedError('method {0} not implemented'.format(method))
+
 
 def calc_lfp_linesource(cell, x=0, y=0, z=0, sigma=0.3,
                         r_limit=None,
