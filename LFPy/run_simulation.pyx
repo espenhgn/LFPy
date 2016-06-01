@@ -53,7 +53,7 @@ def _run_simulation(cell, variable_dt=False, atol=0.001):
     cell._loadspikes()
         
     #print sim.time at intervals
-    cdef double counter = 0.
+    cdef int counter = 0
     cdef double interval
     cdef double tstopms = cell.tstopms
     cdef double t0 = time()
@@ -66,12 +66,12 @@ def _run_simulation(cell, variable_dt=False, atol=0.001):
     
     while neuron.h.t < tstopms:
         neuron.h.fadvance()
-        counter += 1.
+        counter += 1
         if divmod(counter, interval)[1] == 0:
             rtfactor = (neuron.h.t - ti)  * 1E-3 / (time() - t0)
             if cell.verbose:
-                print('t = %.0f, realtime factor: %.3f' \
-                        % (neuron.h.t, rtfactor))
+                print('t = {:.0f}, realtime factor: {:.3f}'.format(neuron.h.t,
+                                                                   rtfactor))
             t0 = time()
             ti = neuron.h.t
 
@@ -90,7 +90,9 @@ def _run_simulation_with_electrode(cell, electrode=None,
     cdef int i, j, tstep, ncoeffs
     cdef int totnsegs = cell.totnsegs
     cdef double tstopms = cell.tstopms
-    cdef double counter, interval
+    cdef int counter
+    cdef int lendotrodcoeffs0
+    cdef double interval
     cdef double t0
     cdef double ti
     cdef double rtfactor
@@ -136,7 +138,8 @@ def _run_simulation_with_electrode(cell, electrode=None,
         else:
             electrodes = [electrode]
         
-        #calculate list of dotprodcoeffs, will try temp storage of imem, tvec, LFP
+        #calculate list of dotprodcoeffs, will try temp storage of
+        #imem, tvec, LFP
         cellTvec = cell.tvec
         try:
             cellImem = cell.imem.copy()
@@ -179,8 +182,8 @@ def _run_simulation_with_electrode(cell, electrode=None,
             del cell.imem
     elif electrode is None:
         electrodes = None
-        
 
+    
     # Initialize NEURON simulations of cell object    
     neuron.h.dt = timeres_NEURON
     
@@ -211,14 +214,14 @@ def _run_simulation_with_electrode(cell, electrode=None,
     cell._loadspikes()
     
     #print sim.time at intervals
-    counter = 0.
+    counter = 0
     tstep = 0
     t0 = time()
     ti = neuron.h.t
     if tstopms > 10000:
-        interval = 1 / timeres_NEURON * 1000
+        interval = 1. / timeres_NEURON * 1000
     else:
-        interval = 1 / timeres_NEURON * 100
+        interval = 1. / timeres_NEURON * 100
         
     #temp vector to store membrane currents at each timestep
     imem = np.empty(cell.totnsegs)
@@ -227,7 +230,7 @@ def _run_simulation_with_electrode(cell, electrode=None,
         electrodesLFP = []
         for coeffs in dotprodcoeffs:
             electrodesLFP.append(np.empty((coeffs.shape[0],
-                                    cell.tstopms / cell.timeres_NEURON + 1)))
+                                    int(tstopms / timeres_NEURON + 1))))
     #LFPs for each electrode will be put here during simulations
     if to_file:
         #ensure right ending:
@@ -236,9 +239,10 @@ def _run_simulation_with_electrode(cell, electrode=None,
         el_LFP_file = h5py.File(file_name, 'w')
         i = 0
         for coeffs in dotprodcoeffs:
-            el_LFP_file['electrode%.3i' % i] = np.empty((coeffs.shape[0],
-                                    cell.tstopms / cell.timeres_NEURON + 1))
+            el_LFP_file['electrode{:03d}'.format(i)] = np.empty((coeffs.shape[0],
+                                            int(tstopms / timeres_NEURON + 1)))
             i += 1
+
 
     #multiply segment areas with specific membrane currents later:
     #mum2 conversion factor:
@@ -260,16 +264,17 @@ def _run_simulation_with_electrode(cell, electrode=None,
                     
             if to_file:
                 for j, coeffs in enumerate(dotprodcoeffs):
-                    el_LFP_file['electrode%.3i' % j][:, tstep] = np.dot(coeffs, imem)
+                    el_LFP_file['electrode{:03d}'.format(j)
+                                ][:, tstep] = np.dot(coeffs, imem)
             
             tstep += 1
         neuron.h.fadvance()
-        counter += 1.
-        if divmod(counter, interval)[1] == 0:
+        counter += 1
+        if counter % interval == 0:
             rtfactor = (neuron.h.t - ti) * 1E-3 / (time() - t0)
             if cell.verbose:
-                print('t = %.0f, realtime factor: %.3f'\
-                         % (neuron.h.t, rtfactor))
+                print('t = {:.0f}, realtime factor: {:.3f}'.format(neuron.h.t,
+                                                                   rtfactor))
             t0 = time()
             ti = neuron.h.t
     
@@ -289,7 +294,8 @@ def _run_simulation_with_electrode(cell, electrode=None,
                 #j += 1
         if to_file:
             for j, coeffs in enumerate(dotprodcoeffs):
-                el_LFP_file['electrode%.3i' % j][:, tstep] = np.dot(coeffs, imem)
+                el_LFP_file['electrode{:03d}'.format(j)
+                            ][:, tstep] = np.dot(coeffs, imem)
 
     except:
         pass
