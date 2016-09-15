@@ -12,8 +12,6 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
 import LFPy
 
-plt.interactive(1)
-plt.close('all')
 
 #Fetch Hay et al. 2011 model files
 if not os.path.isfile('L5bPCmodelsEH/morphologies/cell1.asc'):
@@ -55,6 +53,7 @@ cellParameters = {
     'tstartms' : -159,
     'tstopms' : 10,
     'v_init' : -60,
+    'celsius': 34,
     'pt3d' : True,
 }
 
@@ -89,7 +88,7 @@ cell.set_rotation(x=4.729, y=-3.166)
 #Override passive reversal potential, AP is generated
 for sec in cell.allseclist:
     for seg in sec:
-        seg.e_pas = -59.7
+        seg.e_pas = -59.5
 
 ##perform NEURON simulation, results saved as attributes in the cell instance
 cell.simulate(electrode=electrode)
@@ -167,7 +166,7 @@ def plotstuff(cell, electrode):
 
     #plot extracellular spike in detail
     ind = np.where(electrode.LFP == electrode.LFP.min())[0][0]
-    timeind = (cell.tvec >= 0) & (cell.tvec <= 4)
+    timeind = (cell.tvec >= 0) & (cell.tvec <= 10)
     xticks = np.arange(10)
     xticklabels = xticks
     LFPtrace = electrode.LFP[ind, ]
@@ -243,5 +242,4 @@ def plotstuff(cell, electrode):
 #Plotting of simulation results:
 fig = plotstuff(cell, electrode)
 fig.savefig('example2.pdf', dpi=300)
-
 plt.show()
