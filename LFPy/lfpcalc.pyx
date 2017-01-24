@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''Copyright (C) 2012 Computational Neuroscience Group, UMB.
+'''Copyright (C) 2012 Computational Neuroscience Group, NMBU.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -9,7 +9,9 @@ the Free Software Foundation, either version 3 of the License, or
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.'''
+GNU General Public License for more details.
+
+'''
 
 import numpy as np
 cimport numpy as np
@@ -164,9 +166,9 @@ cpdef np.ndarray[DTYPE_t, ndim=1, negative_indices=False] calc_lfp_linesource(
 
     #case i, h < 0, l < 0
     [i] = np.where(hnegi & lnegi)
-    #case ii, h < 0, l > 0
+    #case ii, h < 0, l >= 0
     [ii] = np.where(hnegi & lposi)
-    #case iii, h > 0, l > 0
+    #case iii, h >= 0, l >= 0
     [iii] = np.where(hposi & lposi)
     
 
@@ -249,7 +251,7 @@ cpdef np.ndarray[DTYPE_t, ndim=1] calc_lfp_som_as_point(cell,
     r2 = _r2_calc(xend, yend, zend, x, y, z, h)
     r_soma = _r_soma_calc(xmid, ymid, zmid, x, y, z)
     if r_soma < s_limit:
-        print('Adjusting r-distance to soma segment from %g to %g' \
+        print('Adjusting r-distance to soma segment from %g to %g'
                 % (r_soma, s_limit))
         r_soma = s_limit
 
@@ -275,9 +277,9 @@ cpdef np.ndarray[DTYPE_t, ndim=1] calc_lfp_som_as_point(cell,
     #Line sources
     #case i,  h < 0,  l < 0
     [i] = np.where(hnegi & lnegi)
-    #case ii,  h < 0,  l > 0
+    #case ii,  h < 0,  l >= 0
     [ii] = np.where(hnegi & lposi)
-    #case iii,  h > 0,  l > 0
+    #case iii,  h >= 0,  l >= 0
     [iii] = np.where(hposi & lposi)
 
     Ememi = _Ememi_calc(i, currmem, sigma, deltaS, l, r2, h)
@@ -444,9 +446,8 @@ cdef np.ndarray[DTYPE_t, ndim=1, negative_indices=False] _h_calc(
     aa = np.array([x - xend, y - yend, z-zend])
     aaT = aa.T
     bb = np.array([xend - xstart, yend - ystart, zend - zstart])
-    cc = np.dot(aaT, bb).diagonal().copy()
+    cc = np.dot(aaT, bb).diagonal()
     hh = cc / deltaS
-    hh[0] = 0
     return hh
 
 
