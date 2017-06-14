@@ -100,21 +100,23 @@ Units
 Units follow the NEURON conventions, `see here. <https://www.neuron.yale.edu/neuron/static/docs/units/unitchart.html>`_
 The units in LFPy for given quantities are:
 
-+-------------+-----------+
-| What        | Unit      |
-+=============+===========+
-| Potential   | [mV]      |
-+-------------+-----------+
-| Current     | [nA]      |
-+-------------+-----------+
-| Conductance | [S/cm2]   |
-+-------------+-----------+
-| Capacitance | [μF/cm2]  |
-+-------------+-----------+
-| Dimension   | [μm]      |
-+-------------+-----------+
-| Syn. weight | [µS]      |
-+-------------+-----------+
++----------------------------+-----------+
+| What                       | Unit      |
++============================+===========+
+| Potential                  | [mV]      |
++----------------------------+-----------+
+| Current                    | [nA]      |
++----------------------------+-----------+
+| Conductance                | [S/cm2]   |
++----------------------------+-----------+
+| Extracellular conductivity | [S/m]     |
++----------------------------+-----------+
+| Capacitance                | [μF/cm2]  |
++----------------------------+-----------+
+| Dimension                  | [μm]      |
++----------------------------+-----------+
+| Syn. weight                | [µS]      |
++----------------------------+-----------+
 
 Note: resistance, conductance and capacitance are usually specific values, i.e per membrane area (lowercase r_m, g, c_m)
 Depending on the mechanism files, some may use different units altogether, but this should be taken care of internally by NEURON.
@@ -125,23 +127,23 @@ Contributors
 
 LFPy was developed by:
 
-*	Henrik Lindén
+*	Henrik Lindén https://lindenh.wordpress.com
 
-*	Espen Hagen 
+*	Espen Hagen http://www.mn.uio.no/fysikk/english/?vrtx=person-view&uid=espehage
 
 *	Szymon Łęski
 
 *	Eivind Norheim 
 
-*   Klas H. Pettersen
+*       Klas H. Pettersen http://www.med.uio.no/imb/english/?vrtx=person-view&uid=klashp
 
-*   Gaute T. Einevoll
+*       Gaute T. Einevoll https://www.nmbu.no/ans/gaute.einevoll
 
 
 Contact
 =======
 
 If you want to contact us with questions, bugs and comments,
-you can send us an email to either `Espen <mailto:espen.hagen@fys.uio.no?Subject=LFPy-Questions/Comments>`_ or `Henrik <mailto:helinden@kth.se?Subject=LFPy-Question/Comments>`_.
+you can send us an email to either `Espen <mailto:espen.hagen@fys.uio.no?Subject=LFPy-Questions/Comments>`_ or `Henrik <mailto:hlinden@sund.dk?Subject=LFPy-Question/Comments>`_.
 We are of course happy to receive feedback of any kind.
 

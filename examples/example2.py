@@ -1,5 +1,21 @@
 #!/usr/bin/env python
-'''Run Hay et al. (2011), generating and plotting a single action potential'''
+# -*- coding: utf-8 -*-
+"""
+Run Hay et al. (2011) layer 5b pyramidal cell model, generating and plotting a
+single action potential and corresponding extracellular potentials (spikes)
+
+Copyright (C) 2017 Computational Neuroscience Group, NMBU.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+"""
 import numpy as np
 import sys
 if sys.version < '3':
@@ -49,8 +65,8 @@ cellParameters = {
     'passive' : False,
     'nsegs_method' : None,
     'dt' : 2**-6,
-    'tstartms' : -159,
-    'tstopms' : 10,
+    'tstart' : -159,
+    'tstop' : 10,
     'v_init' : -60,
     'celsius': 34,
     'pt3d' : True,
@@ -64,7 +80,7 @@ electrodeParameters = {
     'x' : X.flatten(),      # x,y,z-coordinates of contacts
     'y' : Y.flatten(),
     'z' : Z.flatten(),
-    'method' : 'som_as_point',  #sphere source soma segment
+    'method' : 'soma_as_point',  #sphere source soma segment
     'N' : np.array([[0, 1, 0]]*X.size), #surface normals
     'r' : 2.5,              # contact site radius
     'n' : 20,               # datapoints for averaging

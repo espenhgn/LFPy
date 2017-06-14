@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """Copyright (C) 2012 Computational Neuroscience Group, NMBU.
 
 This program is free software: you can redistribute it and/or modify
@@ -13,10 +14,11 @@ GNU General Public License for more details.
 
 """
 
+from __future__ import division
 import numpy as np
 import neuron
 
-class PointProcess:
+class PointProcess(object):
     """
     Superclass on top of Synapse, StimIntElectrode, just to import and set
     some shared variables and extracts Cartesian coordinates of a segment
@@ -27,24 +29,23 @@ class PointProcess:
         LFPy.Cell object
     idx : int
         index of segment
-    color : str
-        color in plot (optional)
-    marker : str
-        marker in plot (optional)
     record_current : bool
-        Must be set True for recording of pointprocess currents
+        Must be set to True for recording of pointprocess currents
+    record_potential : bool
+        Must be set to True for recording potential of pointprocess target idx
     kwargs : pointprocess specific variables passed on to cell/neuron
 
     """
-    def __init__(self, cell, idx, color='k', marker='o', 
-                 record_current=False, **kwargs):
+    def __init__(self, cell, idx, record_current=False, record_potential=False, **kwargs):
         """
         Initializes the PointProcess class
         """
+        for key in ['color', 'marker']:
+            if key in kwargs.keys():
+                raise DeprecationWarning('Parameter {} has been deprecated'.format(key))
         self.idx = idx
-        self.color = color
-        self.marker = marker
         self.record_current = record_current
+        self.record_potential = record_potential
         self.kwargs = kwargs
         self.update_pos(cell)
 
@@ -77,22 +78,20 @@ class Synapse(PointProcess):
         Type of synapse. Built-in examples: ExpSyn, Exp2Syn
     record_current : bool
         Decides if current is recorded
-    color : str
-        Color of synapse for plotting purposes. Defaults to 'r'
-    marker : str
-        Marker to use for synapse for plotting purposes. Defaults to 'o'
     **kwargs
         Additional arguments to be passed on to
         NEURON in `cell.set_synapse`
 
     Examples
     --------
-    >>> import LFPy
     >>> import pylab as pl
     >>> pl.interactive(1)
+    >>> import LFPy
+    >>> import os
     >>> cellParameters = {
-    >>>     'morphology' :  'morphologies/L5_Mainen96_LFPy.hoc',
-    >>>     'tstopms' :     50,
+    >>>     'morphology' :  os.path.join('examples', 'morphologies', 'L5_Mainen96_LFPy.hoc'),
+    >>>     'passive' : True,
+    >>>     'tstop' :     50,
     >>> }
     >>> cell = LFPy.Cell(**cellParameters)
 
@@ -106,7 +105,7 @@ class Synapse(PointProcess):
     >>> }
     >>> synapse = LFPy.Synapse(cell, **synapseParameters)
     >>> synapse.set_spike_times(pl.array([10, 15, 20, 25]))
-    >>> cell.simulate(rec_isyn=True)
+    >>> cell.simulate()
 
     >>> pl.subplot(211)
     >>> pl.plot(cell.tvec, synapse.i)
@@ -116,24 +115,27 @@ class Synapse(PointProcess):
     >>> pl.title('Somatic potential (mV)')
 
     """
-    def __init__(self, cell, idx, syntype, color='r', marker='o',
-                 record_current=False, **kwargs):
+    def __init__(self, cell, idx, syntype, record_current=False, record_potential=False, **kwargs):
         """
         Initialization of class Synapse
         """
-        PointProcess.__init__(self, cell, idx, color, marker, record_current, 
-                              **kwargs)
+        PointProcess.__init__(self, cell, idx, record_current, record_potential, **kwargs)
             
         self.syntype = syntype
         self.cell = cell
-        self.hocidx = int(cell.set_synapse(idx, syntype,
-                                           record_current, **kwargs))
+        self.hocidx = int(cell.set_synapse(idx=idx, syntype=syntype,
+                                           record_current=record_current,
+                                           record_potential=record_potential,
+                                           **kwargs))
         cell.synapses.append(self)
         cell.synidx.append(idx)
 
     def set_spike_times(self, sptimes=np.zeros(0)):
         """Set the spike times explicitly using numpy arrays"""
-        self.sptimes = sptimes
+        try:
+            assert type(sptimes) is np.ndarray
+        except AssertionError:
+            raise AssertionError('synapse activation times must be a np.ndarray, not type({})'.format(type(sptimes)))
         self.cell.sptimeslist.append(sptimes)
     
     def set_spike_times_w_netstim(self, noise=1., start=0., number=1E3,
@@ -180,8 +182,12 @@ class Synapse(PointProcess):
 class StimIntElectrode(PointProcess):
     """Class for NEURON point processes, ie VClamp, SEClamp and ICLamp,
     SinIClamp, ChirpIClamp with arguments.
+    
     Electrode currents go here.
-    Membrane currents will no longer sum to zero if these mechanisms are used.
+    Membrane currents will no longer sum to zero if these mechanisms are used,
+    as the equivalent circuit is akin to a current input to the compartment
+    from a far away extracellular location ("ground"), not immediately from
+    the surface to the inside of the compartment as for transmembrane currents.
     
     Refer to NEURON documentation @ neuron.yale.edu for kwargs
     Will insert pptype on cell-instance, pass the corresponding kwargs onto
@@ -193,25 +199,24 @@ class StimIntElectrode(PointProcess):
         `LFPy.Cell` or `LFPy.TemplateCell` instance to receive Stimulation
          electrode input
     idx : int
-        Cell index where the stimulation electrode is placed
+        Cell segment index where the stimulation electrode is placed
     pptype : str
         Type of point process. Built-in examples: VClamp, SEClamp and ICLamp.
         Defaults to 'SEClamp'.
     record_current : bool
-            Decides if current is recorded
-    color : str
-        Color of stimulation electrode for plotting purposes. Defaults to 'p'
-    marker : str
-        Marker to use for plotting purposes. Defaults to '*'
+        Decides if current is recorded
+    record_potential : bool
+        switch for recording the potential on postsynaptic segment index
     **kwargs
         Additional arguments to be passed on to
         NEURON in `cell.set_point_process`
 
     Examples
     --------
-    >>> import LFPy
     >>> import pylab as pl
     >>> pl.interactive(1)
+    >>> import os
+    >>> import LFPy
     >>> #define a list of different electrode implementations from NEURON
     >>> pointprocesses = [
     >>>     {
@@ -226,11 +231,11 @@ class StimIntElectrode(PointProcess):
     >>>         'idx' : 0,
     >>>         'record_current' : True,
     >>>         'pptype' : 'VClamp',
-    >>>         'amp[0]' : -65,
+    >>>         'amp[0]' : -70,
     >>>         'dur[0]' : 10,
     >>>         'amp[1]' : 0,
     >>>         'dur[1]' : 20,
-    >>>         'amp[2]' : -65,
+    >>>         'amp[2]' : -70,
     >>>         'dur[2]' : 10,
     >>>    },
     >>>    {
@@ -238,18 +243,19 @@ class StimIntElectrode(PointProcess):
     >>>        'record_current' : True,
     >>>        'pptype' : 'SEClamp',
     >>>        'dur1' : 10,
-    >>>        'amp1' : -65,
+    >>>        'amp1' : -70,
     >>>        'dur2' : 20,
     >>>        'amp2' : 0,
     >>>        'dur3' : 10,
-    >>>        'amp3' : -65,
+    >>>        'amp3' : -70,
     >>>     },
     >>>  ]
     >>>  #create a cell instance for each electrode
     >>> for pointprocess in pointprocesses:
-    >>>     cell = LFPy.Cell(morphology='morphologies/L5_Mainen96_LFPy.hoc')
+    >>>      cell = LFPy.Cell(morphology=os.path.join('examples', 'morphologies', 'L5_Mainen96_LFPy.hoc'),
+    >>>                      passive=True)
     >>>      stimulus = LFPy.StimIntElectrode(cell, **pointprocess)
-    >>>      cell.simulate(rec_istim=True)
+    >>>      cell.simulate()
     >>>      pl.subplot(211)
     >>>      pl.plot(cell.tvec, stimulus.i, label=pointprocess['pptype'])
     >>>      pl.legend(loc='best')
@@ -261,12 +267,17 @@ class StimIntElectrode(PointProcess):
 
     """    
     def __init__(self, cell, idx, pptype='SEClamp',
-                 color='p', marker='*', record_current=False, **kwargs):
+                 record_current=False,
+                 record_potential=False, **kwargs):
         """Initialize StimIntElectrode class"""
-        PointProcess.__init__(self, cell, idx, color, marker, record_current)
+        PointProcess.__init__(self, cell=cell, idx=idx,
+                              record_current=record_current,
+                              record_potential=record_potential)
         self.pptype = pptype
         self.hocidx = int(cell.set_point_process(idx, pptype,
-                                                 record_current, **kwargs))
+                                                 record_current=record_current,
+                                                 record_potential=record_potential,
+                                                 **kwargs))
         cell.pointprocesses.append(self)
         cell.pointprocess_idx.append(idx)
 
@@ -276,83 +287,4 @@ class StimIntElectrode(PointProcess):
     
     def collect_potential(self, cell):
         """Collect membrane potential of segment with PointProcess"""
-        self.v = np.array(cell.synvreclist.o(self.hocidx))
-
-
-class PointProcessPlayInSoma:
-    """Class implementation of Eivind's playback alghorithm"""
-    def __init__(self, soma_trace):
-        """
-        Class for playing back somatic trace at specific time points
-        into soma as boundary condition for the membrane voltage
-        """
-        self.soma_trace = soma_trace
-    
-    def set_play_in_soma(self, cell, t_on=np.array([0])):
-        """
-        Set mechanisms for playing soma trace at time(s) t_on,
-        where t_on is a numpy.array
-        """
-        if type(t_on) != np.ndarray:
-            t_on = np.array(t_on)
-        
-        f = file(self.soma_trace)
-        x = []
-        for line in f.readlines():
-            x.append(list(map(float, line.split())))
-        x = np.array(x)
-        X = x.T
-        f.close()
-        
-        #time and values for trace, shifting
-        tTrace = X[0, ]
-        tTrace -= tTrace[0]
-        
-        trace = X[1, ]
-        trace -= trace[0]
-        trace += cell.e_pas
-        
-        #creating trace
-        somaTvec0 = tTrace
-        somaTvec0 += t_on[0]
-        somaTvec = somaTvec0
-        somaTrace = trace
-        
-        for i in range(1, t_on.size):
-            np.concatenate((somaTvec, somaTvec0 + t_on[i]))
-            np.concatenate((somaTrace, trace))
-
-        somaTvec1 = np.interp(np.arange(somaTvec[0], somaTvec[-1],
-                                cell.dt),
-                                somaTvec, somaTvec)
-        somaTrace1 = np.interp(np.arange(somaTvec[0], somaTvec[-1],
-                                cell.dt),
-                                somaTvec, somaTrace)
-        
-        somaTvecVec = neuron.h.Vector(somaTvec1)
-        somaTraceVec = neuron.h.Vector(somaTrace1)
-        
-        for sec in neuron.h.somalist: #cell.somalist
-            #ensure that soma is perfect capacitor
-            sec.cm = 1E9
-            #Why the fuck doesnt this work:
-            #for seg in sec:
-            #    somaTraceVec.play(seg._ref_v, somaTvecVec)
-        
-        #call function that insert trace on soma
-        self._play_in_soma(somaTvecVec, somaTraceVec)
-            
-    def _play_in_soma(self, somaTvecVec, somaTraceVec):
-        """
-        Replacement of LFPy.hoc "proc play_in_soma()",
-        seems necessary that this function lives in hoc
-        """
-        neuron.h('objref soma_tvec, soma_trace')
-        
-        neuron.h('soma_tvec = new Vector()')
-        neuron.h('soma_trace = new Vector()')
-        
-        neuron.h.soma_tvec.from_python(somaTvecVec)
-        neuron.h.soma_trace.from_python(somaTraceVec)
-        
-        neuron.h('soma_trace.play(&soma.v(0.5), soma_tvec)')
+        self.v = np.array(cell.stimvreclist.o(self.hocidx))
