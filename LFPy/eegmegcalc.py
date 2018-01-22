@@ -536,7 +536,7 @@ class FourSphereVolumeConductor(object):
 
             if el_rad <= self._rz:
                 n_terms[el_point] = np.nan
-                warn('Electrode must be farther away from brain center than dipole. r = %s, rz = %s', el_rad, self._rz)
+                warn('Electrode must be farther away from brain center than dipole. r = {}, rz = {}'.format(el_rad, self._rz))
             elif el_rad <= self.r1:
                 n_terms[el_point] = self._potential_brain_rad(el_rad,
                                                              theta_point)
@@ -551,7 +551,7 @@ class FourSphereVolumeConductor(object):
                                                              theta_point)
             else:
                 n_terms[el_point] = 0.
-                warn('Electrode located outside head model. Maximum r = %s µm. Your r = %s µm', self.r4, el_rad)
+                warn('Electrode located outside head model. Maximum r = {} µm. Your r = {} µm'.format(self.r4, el_rad))
         potential = phi_const * n_terms
         return potential
 
