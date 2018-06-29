@@ -20,7 +20,7 @@ import unittest
 import numpy as np
 import LFPy
 import neuron
-import h5py
+import exdir
 
 class testNetworkPopulation(unittest.TestCase):
     """
@@ -344,7 +344,7 @@ class testNetwork(unittest.TestCase):
             for cell in population.cells:
                 self.assertTrue(np.all(cell.somav == network.v_init))
             
-        f = h5py.File(os.path.join(network.OUTPUTPATH, 'OUTPUT.h5'), 'r')        
+        f = exdir.File(os.path.join(network.OUTPUTPATH, 'OUTPUT.h5'), 'r')        
         np.testing.assert_equal(f['OUTPUT[0]'].value, np.zeros_like(f['OUTPUT[0]'].value))
         f.close()
 
@@ -431,7 +431,7 @@ class testNetwork(unittest.TestCase):
             for cell in population.cells:
                 self.assertTrue(np.all(cell.somav == network.v_init))
             
-        f = h5py.File(os.path.join(network.OUTPUTPATH, 'OUTPUT.h5'), 'r')        
+        f = exdir.File(os.path.join(network.OUTPUTPATH, 'OUTPUT.h5'), 'r')        
         np.testing.assert_equal(f['OUTPUT[0]'].value, RESULTS[0])
         f.close()
 

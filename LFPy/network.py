@@ -20,7 +20,7 @@ import numpy as np
 import os
 import scipy.stats as stats
 import json
-import h5py
+import exdir
 from mpi4py import MPI
 import neuron
 from .templatecell import TemplateCell
@@ -401,7 +401,7 @@ class NetworkPopulation(object):
                 popDataArray[i]['z_rot'] = z_rot
 
             # Dump to hdf5 file, append to file if it exists
-            f = h5py.File(os.path.join(self.OUTPUTPATH,
+            f = exdir.File(os.path.join(self.OUTPUTPATH,
                                        'cell_positions_and_rotations.h5'))
             # delete old entry if it exist
             if self.name in f.keys():
@@ -840,7 +840,7 @@ class Network(object):
                     synDataArray[i]['y'] = y
                     synDataArray[i]['z'] = z
                 # Dump to hdf5 file, append to file if entry exists
-                f = h5py.File(os.path.join(self.OUTPUTPATH,
+                f = exdir.File(os.path.join(self.OUTPUTPATH,
                                            'synapse_positions.h5'))
                 key = '{}:{}'.format(pre, post)
                 if key in f.keys():
@@ -1036,9 +1036,9 @@ class Network(object):
         if to_file and electrode is not None:
             op=MPI.SUM
             fname = os.path.join(self.OUTPUTPATH, 'tmp_output_RANK_{:03d}.h5'.format(RANK))
-            f0 = h5py.File(fname, 'r')
+            f0 = exdir.File(fname, 'r')
             if RANK == 0:
-                f1 = h5py.File(os.path.join(self.OUTPUTPATH, file_name), 'w')
+                f1 = exdir.File(os.path.join(self.OUTPUTPATH, file_name), 'w')
             dtype = []
             for key, value in f0[list(f0.keys())[0]].items():
                 dtype.append((str(key), np.float))
@@ -1396,7 +1396,7 @@ def _run_simulation_with_electrode(network, cvode,
         #ensure right ending:
         if file_name.split('.')[-1] != 'h5':
             file_name += '.h5'
-        outputfile = h5py.File(os.path.join(network.OUTPUTPATH,
+        outputfile = exdir.File(os.path.join(network.OUTPUTPATH,
                                             file_name.format(RANK)), 'w')
         for i, coeffs in enumerate(dotprodcoeffs):
             # can't do it this way until h5py issue #770

@@ -94,13 +94,12 @@ setup(
         'numpy>=1.8',
         'scipy>=0.14',
         'Cython>=0.20',
-        'h5py>=2.5,<2.8',
+        'exdir>=0.3.2',
         'mpi4py>=1.2',
         'csa>=0.1.8',
         ],
     extras_require = {'tests': ['nose>=1.3.3']},
     dependency_links = [
-        "https://github.com/INCF/csa/tarball/master#egg=csa-0.1.7"
     ],
     provides = ['LFPy'],
     )
