@@ -13,6 +13,10 @@ medium that is covers the cortex. In addition the ECoG signal is
 calculated at the top of the brain, with a large recording electrode,
 which introduces strong spatial averaging.
 
+Execution:
+
+    python example_ECoG.py
+    
 Copyright (C) 2017 Computational Neuroscience Group, NMBU.
 
 This program is free software: you can redistribute it and/or modify
@@ -215,9 +219,9 @@ cell.set_pos(z=top_of_cortex-np.max(cell.zend) - 50)
 
 # Cell bottom needs to be above bottom layer because of convention in
 # calculation of ECoG potentials using the Method of Images in
-# class RecMEAElectrode. This means thickness of middle layer
-# must be greater than length of cell.
-h = np.max(cell.zend) - np.min(cell.zend) + 1
+# class RecMEAElectrode. This means that the middle layer
+# must extend deeper than the cell.
+h = - np.min(cell.zend) + 1
 
 # Synaptic parameters taken from Hendrickson et al 2011
 # Excitatory synapse parameters:

@@ -19,7 +19,7 @@ from __future__ import division
 import os
 import neuron
 import numpy as np
-import scipy
+import scipy.stats
 import sys
 import posixpath
 from warnings import warn
@@ -28,6 +28,15 @@ from .run_simulation import _run_simulation, _run_simulation_with_electrode
 from .run_simulation import _collect_geometry_neuron
 from .alias_method import alias_method
 
+# check neuron version:
+try:
+    try:
+        assert(neuron.version >= '7.6.4')
+    except AttributeError:
+        warn('LFPy could not read NEURON version info. v7.6.4 or newer required')
+except AssertionError:
+    warn('LFPy requires NEURON v7.6.4 or newer. Found v{}'.format(neuron.version))
+    
 
 class Cell(object):
     """
@@ -88,6 +97,7 @@ class Cell(object):
     --------
     Simple example of how to use the Cell class with a passive-circuit
     morphology (modify morphology path accordingly):
+
     >>> import os
     >>> import LFPy
     >>> cellParameters = {
@@ -577,12 +587,11 @@ class Cell(object):
             self.sptimeslist = neuron.h.List()
 
         i = 0
-        cmd1 = 'syn = neuron.h.'
-        cmd2 = '(seg.x, sec=sec)'
+        cmd = 'syn = neuron.h.{}(seg.x, sec=sec)'
         for sec in self.allseclist:
             for seg in sec:
                 if i == idx:
-                    command = cmd1 + syntype + cmd2
+                    command = cmd.format(syntype)
                     if sys.version >= "3.4":
                         exec(command, locals(), globals())
                     else:
@@ -608,7 +617,7 @@ class Cell(object):
 
                     #record currents
                     if record_current:
-                        synirec = neuron.h.Vector(int(self.tstop /
+                        synirec = neuron.h.Vector(int(self.tstop //
                                                       self.dt+1))
                         synirec.record(syn._ref_i, self.dt)
                         self.synireclist.append(synirec)
@@ -618,7 +627,7 @@ class Cell(object):
 
                     #record potential
                     if record_potential:
-                        synvrec = neuron.h.Vector(int(self.tstop /
+                        synvrec = neuron.h.Vector(int(self.tstop //
                                                       self.dt+1))
                         synvrec.record(seg._ref_v, self.dt)
                         self.synvreclist.append(synvrec)
@@ -877,9 +886,11 @@ class Cell(object):
             depth filter
         z_max: float
             depth filter
-        fun : function or iterable
-            iterable (list, tuple, numpy.array) of function, probability
-            distribution in scipy.stats module
+        fun : function or str, or iterable of function or str
+            if function a scipy.stats method, if str, must be method in
+            scipy.stats module with the same name (like 'norm'), 
+            if iterable (list, tuple, numpy.array) of function or str some
+            probability distribution in scipy.stats module
         funargs : dict or iterable
             iterable (list, tuple, numpy.array) of dict, arguments to fun.pdf
             method (e.g., w. keys 'loc' and 'scale')
@@ -921,10 +932,14 @@ class Cell(object):
                 assert((len(fun) == len(funargs)) & (len(fun) == len(funweights)))
                 mod = np.zeros(poss_idx.shape)
                 for f, args, scl in zip(fun, funargs, funweights):
+                    if type(f) is str and f in dir(scipy.stats):
+                        exec('f = scipy.stats.{}'.format(f))
                     df = f(**args)
                     mod += df.pdf(x=self.zmid[poss_idx])*scl
                 p *= mod
             else:
+                if type(fun) is str and fun in dir(scipy.stats):
+                    exec('fun = scipy.stats.{}'.format(fun))
                 df = fun(**funargs)
                 p *= df.pdf(x=self.zmid[poss_idx])
             # normalize
@@ -1248,12 +1263,11 @@ class Cell(object):
             self.recvariablesreclist.append(variablereclist)
             for sec in self.allseclist:
                 for seg in sec:
-                    recvector = neuron.h.Vector(int(self.tstop /
-                                                    self.dt + 1))
-                    if hasattr(seg, variable):
+                    recvector = neuron.h.Vector(int(self.tstop / self.dt + 1))
+                    try:
                         recvector.record(getattr(seg, '_ref_%s' % variable),
                                          self.dt)
-                    else:
+                    except(NameError, AttributeError):
                         print('non-existing variable %s, section %s.%f' %
                                 (variable, sec.name(), seg.x))
                     variablereclist.append(recvector)
@@ -1371,20 +1385,20 @@ class Cell(object):
             raise AttributeError('rotation_order must be a string')
         elif 'x' not in rotation_order or 'y' not in rotation_order or 'z' not in rotation_order:
             raise AttributeError("'x', 'y', and 'z' must be in rotation_order")
-        elif len(rotation_order) is not 3:
+        elif len(rotation_order) != 3:
             raise AttributeError("rotation_order should have 3 elements (e.g. 'zyx')")
 
         for ax in rotation_order:
-            if ax is 'x' and x is not None:
+            if ax == 'x' and x is not None:
                 theta = -x
-                rotation_x = np.matrix([[1, 0, 0],
-                    [0, np.cos(theta), -np.sin(theta)],
-                    [0, np.sin(theta), np.cos(theta)]])
+                rotation_x = np.array([[1, 0, 0],
+                                       [0, np.cos(theta), -np.sin(theta)],
+                                       [0, np.sin(theta), np.cos(theta)]])
 
                 rel_start, rel_end = self._rel_positions()
 
-                rel_start = rel_start * rotation_x
-                rel_end = rel_end * rotation_x
+                rel_start = np.dot(rel_start, rotation_x)
+                rel_end = np.dot(rel_end, rotation_x)
 
                 self._real_positions(rel_start, rel_end)
                 if self.verbose:
@@ -1393,16 +1407,16 @@ class Cell(object):
                 if self.verbose:
                     print('Geometry not rotated around x-axis')
 
-            if ax is 'y' and y is not None:
+            if ax == 'y' and y is not None:
                 phi = -y
-                rotation_y = np.matrix([[np.cos(phi), 0, np.sin(phi)],
-                    [0, 1, 0],
-                    [-np.sin(phi), 0, np.cos(phi)]])
+                rotation_y = np.array([[np.cos(phi), 0, np.sin(phi)],
+                                       [0, 1, 0],
+                                       [-np.sin(phi), 0, np.cos(phi)]])
 
                 rel_start, rel_end = self._rel_positions()
 
-                rel_start = rel_start * rotation_y
-                rel_end = rel_end * rotation_y
+                rel_start = np.dot(rel_start, rotation_y)
+                rel_end = np.dot(rel_end, rotation_y)
 
                 self._real_positions(rel_start, rel_end)
                 if self.verbose:
@@ -1411,16 +1425,16 @@ class Cell(object):
                 if self.verbose:
                     print('Geometry not rotated around y-axis')
 
-            if ax is 'z' and z is not None:
+            if ax == 'z' and z is not None:
                 gamma = -z
-                rotation_z = np.matrix([[np.cos(gamma), -np.sin(gamma), 0],
-                        [np.sin(gamma), np.cos(gamma), 0],
-                        [0, 0, 1]])
+                rotation_z = np.array([[np.cos(gamma), -np.sin(gamma), 0],
+                                       [np.sin(gamma), np.cos(gamma), 0],
+                                       [0, 0, 1]])
 
                 rel_start, rel_end = self._rel_positions()
 
-                rel_start = rel_start * rotation_z
-                rel_end = rel_end * rotation_z
+                rel_start = np.dot(rel_start, rotation_z)
+                rel_end = np.dot(rel_end, rotation_z)
 
                 self._real_positions(rel_start, rel_end)
                 if self.verbose:
@@ -1752,22 +1766,21 @@ class Cell(object):
 
         Examples
         --------
-
         >>> cell = LFPy.Cell(**kwargs)
         >>> rotation = {'x' : 1.233, 'y' : 0.236, 'z' : np.pi}
         >>> cell.set_pt3d_rotation(**rotation)
         """
         for ax in rotation_order:
-            if ax is 'x' and x is not None:
+            if ax == 'x' and x is not None:
                 theta = -x
-                rotation_x = np.matrix([[1, 0, 0],
-                    [0, np.cos(theta), -np.sin(theta)],
-                    [0, np.sin(theta), np.cos(theta)]])
+                rotation_x = np.array([[1, 0, 0],
+                                       [0, np.cos(theta), -np.sin(theta)],
+                                       [0, np.sin(theta), np.cos(theta)]])
                 for i in range(len(self.x3d)):
                     rel_pos = self._rel_pt3d_positions(self.x3d[i],
                                                        self.y3d[i], self.z3d[i])
 
-                    rel_pos = rel_pos * rotation_x
+                    rel_pos = np.dot(rel_pos, rotation_x)
 
                     self.x3d[i], self.y3d[i], self.z3d[i] = \
                                                 self._real_pt3d_positions(rel_pos)
@@ -1777,16 +1790,16 @@ class Cell(object):
                 if self.verbose:
                     print('Geometry not rotated around x-axis')
 
-            if ax is 'y' and y is not None:
+            if ax == 'y' and y is not None:
                 phi = -y
-                rotation_y = np.matrix([[np.cos(phi), 0, np.sin(phi)],
-                    [0, 1, 0],
-                    [-np.sin(phi), 0, np.cos(phi)]])
+                rotation_y = np.array([[np.cos(phi), 0, np.sin(phi)],
+                                       [0, 1, 0],
+                                       [-np.sin(phi), 0, np.cos(phi)]])
                 for i in range(len(self.x3d)):
                     rel_pos = self._rel_pt3d_positions(self.x3d[i],
                                                        self.y3d[i], self.z3d[i])
 
-                    rel_pos = rel_pos * rotation_y
+                    rel_pos = np.dot(rel_pos, rotation_y)
 
                     self.x3d[i], self.y3d[i], self.z3d[i] = \
                                                 self._real_pt3d_positions(rel_pos)
@@ -1796,16 +1809,16 @@ class Cell(object):
                 if self.verbose:
                     print('Geometry not rotated around y-axis')
 
-            if ax is 'z' and z is not None:
+            if ax == 'z' and z is not None:
                 gamma = -z
-                rotation_z = np.matrix([[np.cos(gamma), -np.sin(gamma), 0],
-                        [np.sin(gamma), np.cos(gamma), 0],
-                        [0, 0, 1]])
+                rotation_z = np.array([[np.cos(gamma), -np.sin(gamma), 0],
+                                       [np.sin(gamma), np.cos(gamma), 0],
+                                       [0, 0, 1]])
                 for i in range(len(self.x3d)):
                     rel_pos = self._rel_pt3d_positions(self.x3d[i],
                                                        self.y3d[i], self.z3d[i])
 
-                    rel_pos = rel_pos * rotation_z
+                    rel_pos = np.dot(rel_pos, rotation_z)
 
                     self.x3d[i], self.y3d[i], self.z3d[i] = \
                                                 self._real_pt3d_positions(rel_pos)
@@ -1899,7 +1912,6 @@ class Cell(object):
 
         Examples
         --------
-
         >>> from matplotlib.collections import PolyCollection
         >>> import matplotlib.pyplot as plt
         >>> cell = LFPy.Cell(morphology='PATH/TO/MORPHOLOGY')
@@ -2053,7 +2065,6 @@ class Cell(object):
 
         Examples
         --------
-
         >>> import LFPy
         >>> import numpy as np
         >>> import matplotlib.pyplot as plt
@@ -2166,24 +2177,60 @@ class Cell(object):
                      self.zend - self.zmid]
 
         children_dict = self.get_dict_of_children_idx()
-        for sec in self.allseclist.allsec():
+        for sec in self.allseclist:
             if not neuron.h.SectionRef(sec.name()).has_parent():
-                # skip soma, since soma is an orphan
-                continue
-            bottom_seg = True
-            secref = neuron.h.SectionRef(sec.name())
-            parentseg = secref.parent()
-            parentsec = parentseg.sec
-
-            branch = len(children_dict[parentsec.name()]) > 1
-
-            parent_idx = self.get_idx(section=parentsec.name())[-1]
-            seg_idx = self.get_idx(section=sec.name())[0]
-
+                if sec.nseg == 1:
+                    # skip soma, since soma is an orphan
+                    continue
+                else:
+                    # the first segment has more than one segment,
+                    # need to compute axial currents within this section.
+                    seg_idx = 1
+                    parent_idx = 0
+                    bottom_seg = False
+                    first_sec = True
+                    branch = False
+                    parentsec = None
+                    children_dict = None
+                    connection_dict = None
+                    conn_point = 1
+            else:
+                # section has parent section
+                first_sec = False
+                bottom_seg = True
+                secref = neuron.h.SectionRef(sec.name())
+                parentseg = secref.parent()
+                parentsec = parentseg.sec
+                children_dict = self.get_dict_of_children_idx()
+                branch = len(children_dict[parentsec.name()]) > 1
+                connection_dict = self.get_dict_parent_connections()
+                conn_point = connection_dict[sec.name()]
+                # find parent index
+                if conn_point == 1 or parentsec.nseg == 1:
+                    internal_parent_idx = -1 # last seg in sec
+                elif conn_point == 0:
+                    internal_parent_idx = 0 # first seg in sec
+                else:
+                    # if connection on seg that's not first or last
+                    segment_xlist = np.array([segment.x for segment in parentsec])
+                    internal_parent_idx = np.abs(segment_xlist - conn_point).argmin()
+                parent_idx = self.get_idx(section=parentsec.name())[internal_parent_idx]
+                # find segment index
+                seg_idx = self.get_idx(section=sec.name())[0]
             for _ in sec:
-                iseg, ipar = self._parent_and_segment_current(seg_idx, parent_idx,
-                                                        bottom_seg, branch,
-                                                        parentsec, timepoints)
+                if first_sec:
+                    first_sec = False
+                    continue
+                iseg, ipar = self._parent_and_segment_current(seg_idx,
+                                                              parent_idx,
+                                                              bottom_seg,
+                                                              branch,
+                                                              parentsec,
+                                                              children_dict,
+                                                              connection_dict,
+                                                              conn_point,
+                                                              timepoints
+                                                              )
 
                 if bottom_seg:
                     # if a seg is connencted to soma, it is
@@ -2220,10 +2267,10 @@ class Cell(object):
                 parent_ri = 0
         return np.array(i_axial), np.array(d_vectors), np.array(pos_vectors)
 
-
     def get_axial_resistance(self):
         """
         Return NEURON axial resistance for all cell compartments.
+        
         Returns
         -------
         ri_list : ndarray, dtype=float
@@ -2248,10 +2295,10 @@ class Cell(object):
 
         return ri_list
 
-
     def get_dict_of_children_idx(self):
         """
         Return dictionary with children segment indices for all sections.
+        
         Returns
         -------
         children_dict : dictionary
@@ -2261,7 +2308,7 @@ class Cell(object):
             sibling of a segment.
         """
         children_dict = {}
-        for sec in self.allseclist.allsec():
+        for sec in self.allseclist:
             children_dict[sec.name()] = []
             for child in neuron.h.SectionRef(sec.name()).child:
                 # add index of first segment of each child
@@ -2273,12 +2320,13 @@ class Cell(object):
     def get_dict_parent_connections(self):
         """
         Return dictionary with parent connection point for all sections.
+        
         Returns
         -------
         connection_dict : dictionary
             Dictionary containing a float in range [0, 1] for each section
             in cell. The float gives the location on the parent segment
-            to which the section is connected to.
+            to which the section is connected.
             The dictionary is needed for computing axial currents.
         """
         connection_dict = {}
@@ -2286,12 +2334,14 @@ class Cell(object):
             connection_dict[sec.name()] = neuron.h.parent_connection()
         return connection_dict
 
-
     def _parent_and_segment_current(self, seg_idx, parent_idx, bottom_seg,
-                              branch, parentsec, timepoints=None):
+                                    branch=False, parentsec=None,
+                                    children_dict=None, connection_dict=None,
+                                    conn_point=1, timepoints=None):
         """
         Return axial current from segment (seg_idx) mid to segment start,
         and current from parent segment (parent_idx) end to parent segment mid.
+        
         Parameters
         ----------
         seg_idx : int
@@ -2324,12 +2374,11 @@ class Cell(object):
             vmem = self.vmem[:,timepoints]
         vpar = vmem[parent_idx]
         vseg = vmem[seg_idx]
-        children_dict = self.get_dict_of_children_idx()
-        connection_dict = self.get_dict_parent_connections()
-
-        conn_point = neuron.h.parent_connection()
-        if bottom_seg and conn_point == 1:
-            parent_ri = neuron.h.ri(0)
+        if bottom_seg and (conn_point == 0 or conn_point == 1):
+            if conn_point == 0:
+                parent_ri = ri_list[parent_idx]
+            else:
+                parent_ri = neuron.h.ri(0)
             if not branch:
                 ri = parent_ri + seg_ri
                 iseg = (vpar - vseg) / ri
@@ -2348,7 +2397,6 @@ class Cell(object):
                 for sib_idx, sib in zip(sib_idcs, sibs):
                     sib_conn_point = connection_dict[sib]
                     if sib_conn_point == 1:
-
                         v_branch_num += vmem[sib_idx][0]/ri_list[sib_idx]
                         v_branch_denom += 1./ ri_list[sib_idx]
                 v_branch = v_branch_num/v_branch_denom
@@ -2357,9 +2405,7 @@ class Cell(object):
         else:
             iseg = (vpar - vseg) / seg_ri
             ipar = iseg
-
         return iseg, ipar
-
 
     def distort_geometry(self, factor=0., axis='z', nu=0.0):
         """
@@ -2368,11 +2414,11 @@ class Cell(object):
         isotropic media that embeds the cell. A ratio nu=0 will only affect
         geometry along the chosen axis. A ratio nu=-1 will isometrically scale
         the neuron geometry along each axis.
-        
+
         This method does not affect the underlying cable properties of the cell,
         only predictions of extracellular measurements (by affecting the
         relative locations of sources representing the compartments).
-        
+
         Parameters
         ----------
         factor : float
@@ -2393,7 +2439,7 @@ class Cell(object):
             assert(axis in ['x', 'y', 'z'])
         except AssertionError:
             raise AssertionError('axis={} not "x", "y" or "z"'.format(axis))
-        
+
         for pos, dir_ in zip(self.somapos, 'xyz'):
             geometry = np.c_[getattr(self, dir_+'start'),
                              getattr(self, dir_+'mid'),
@@ -2406,17 +2452,16 @@ class Cell(object):
                 geometry -= pos
                 geometry *= (1. + factor*nu)
                 geometry += pos
-            
+
             setattr(self, dir_+'start', geometry[:, 0])
             setattr(self, dir_+'mid', geometry[:, 1])
             setattr(self, dir_+'end', geometry[:, 2])
-        
+
         # recompute length of each segment
         self.length = np.sqrt((self.xend - self.xstart)**2 +
                               (self.yend - self.ystart)**2 +
                               (self.zend - self.zstart)**2)
-    
-    
+
     def get_multi_current_dipole_moments(self, timepoints=None):
         '''
         Return 3D current dipole moment vector and middle position vector
@@ -2448,6 +2493,7 @@ class Cell(object):
         --------
         Get all current dipole moments and positions from all axial currents in a
         single neuron simulation.
+
         >>> import LFPy
         >>> import numpy as np
         >>> cell = LFPy.Cell('PATH/TO/MORPHOLOGY', extracellular=False)

@@ -5,6 +5,7 @@
 """
 
 import os
+import sys
 import shutil
 try:
     from setuptools import setup, Extension
@@ -33,23 +34,24 @@ except ImportError as ie:
 #NEURON extension file LFPy/sinsyn.mod can be compiled in place and be copied
 #as part of the package_data, allowing unit tests to run
 from distutils.spawn import find_executable, spawn
-if find_executable('nrnivmodl') is not None:
-    os.chdir(os.path.join('LFPy', 'test'))
-    for path in ['x86_64', 'i686', 'powerpc']:
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-    spawn([find_executable('nrnivmodl')])
-    os.chdir(os.path.join('..', '..'))
-else:
-    print("nrnivmodl script not found in PATH, thus NEURON .mod files could" +
-          "not be compiled, and LFPy.test() functions will fail")
+if not any(arg in sys.argv for arg in ['sdist', 'upload']):
+    if find_executable('nrnivmodl') is not None:
+        os.chdir(os.path.join('LFPy', 'test'))
+        for path in ['x86_64', 'i686', 'powerpc']:
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+        spawn([find_executable('nrnivmodl')])
+        os.chdir(os.path.join('..', '..'))
+    else:
+        print("nrnivmodl script not found in PATH, thus NEURON .mod files could" +
+              "not be compiled, and LFPy.test() functions will fail")
 
 with open('README.md') as file:
     long_description = file.read()
 
 setup(
     name = "LFPy",
-    version = "2.0",
+    version = "2.0.2",
     maintainer = "Espen Hagen",
     maintainer_email = 'espen.hagen@fys.uio.no',
     packages = ['LFPy'],
@@ -63,10 +65,11 @@ setup(
                               os.path.join('powerpc', '*'),
                               os.path.join('powerpc', '.libs', '*'),
                               ]},
+    include_package_data=True,
     cmdclass = cmdclass,
     ext_modules = ext_modules,
-    url='http://LFPy.github.io',
-    download_url = 'https://github.com/LFPy/LFPy/tarball/v2.0',
+    url='http://LFPy.readthedocs.io',
+    download_url = 'https://github.com/LFPy/LFPy/tarball/v2.0.2',
     license='LICENSE',
     description='A module for modeling extracellular potentials of multicompartment neuron models built on NEURON',
     long_description=long_description,
@@ -87,8 +90,14 @@ setup(
         'Development Status :: 5 - Production/Stable',
         ],
     install_requires = [
-        'setuptools', 'numpy', 'scipy', 'Cython', 'h5py',
-        'mpi4py', 'csa',
+        'setuptools>=23.1.0',
+        'numpy>=1.8',
+        'scipy>=0.14',
+        'Cython>=0.20',
+        'h5py>=2.5',
+        'mpi4py>=1.2',
         ],
+    extras_require = {'tests': ['pytest']},
+    dependency_links = [],
     provides = ['LFPy'],
     )

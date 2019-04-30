@@ -74,6 +74,13 @@ Module :mod:`LFPy`
         :members:
         :show-inheritance:
         :undoc-members:
+    
+    class :class:`OneSphereVolumeConductor`
+    =======================================
+    .. autoclass:: OneSphereVolumeConductor
+        :members:
+        :show-inheritance:
+        :undoc-members:
 
     class :class:`FourSphereVolumeConductor`
     ========================================
@@ -108,12 +115,6 @@ Module :mod:`LFPy`
     submodule :mod:`inputgenerators`
     ================================
     .. automodule:: LFPy.inputgenerators
-        :members:
-        :undoc-members:
-
-    submodule :mod:`run_simulation`
-    ===============================
-    .. automodule:: LFPy.run_simulation
         :members:
         :undoc-members:
 

@@ -3,6 +3,10 @@
 """
 Example plot for LFPy: Single-synapse contribution to the EEG
 
+Execution:
+
+    python example_EEG.py
+    
 Copyright (C) 2017 Computational Neuroscience Group, NMBU.
 
 This program is free software: you can redistribute it and/or modify
@@ -76,7 +80,13 @@ if __name__ == '__main__':
     syn_loc = (0, 0, 1000)
 
     cell_params = {'morphology': 'morphologies/L5_Mainen96_LFPy.hoc',
+                   'cm' : 1.0,                 # membrane capacitance
+                   'Ra' : 150,                 # axial resistance
                    'tstart': 0.,
+                   'passive' : True,           # switch on passive mechs
+                   'nsegs_method' : 'lambda_f',# method for setting number of segments,
+                   'lambda_f' : 100,           # segments are isopotential at this frequency
+                   'passive_parameters' : {'g_pas' : 1./30000, 'e_pas' : -70}, # passive params
                    'tstop': 40
                    }
 
@@ -131,7 +141,9 @@ if __name__ == '__main__':
     # potential in 4S with db
     time_max = np.argmax(np.linalg.norm(P, axis=1))
     p = P[time_max, None]
+
     four_sphere = LFPy.FourSphereVolumeConductor(radii, sigmas, eeg_coords)
+
     pot_db_4s = four_sphere.calc_potential(p, r_mid)
     eeg = pot_db_4s.reshape(num_theta, num_phi)*1e9# from mV to pV
 
@@ -161,5 +173,5 @@ if __name__ == '__main__':
 
     ax_eeg.axvline(cell.tvec[time_max], c='gray', ls='--')
 
-    plt.savefig('example_EEG.pdf')
+    # plt.savefig('example_EEG.pdf')
     plt.show()

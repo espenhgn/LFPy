@@ -19,12 +19,10 @@ from __future__ import division
 import numpy as np
 import os
 import scipy.stats as stats
-import json
 import h5py
 from mpi4py import MPI
 import neuron
 from .templatecell import TemplateCell
-import csa
 import scipy.sparse as ss
 
 # set up MPI environment
@@ -140,7 +138,7 @@ class NetworkCell(TemplateCell):
         TemplateCell.__init__(self, **args)
 
         # create list netconlist for spike detecting NetCon object(s)
-        self.netconlist = neuron.h.List()
+        self.sd_netconlist = neuron.h.List()
         # create list of recording device for action potentials
         self.spikes = []
         # create list of random number generators used with synapse model
@@ -198,10 +196,10 @@ class NetworkCell(TemplateCell):
             cell.rng_list.append(rng) # must store ref to rng object
         cell.netconsynapses.append(syntype(x, sec=sec))
 
-        # check that synapses are parameterized correctly
-        if assert_syn_values:
-            for key, value in synparams.items():
-                exec("cell.netconsynapses[-1].{} = {}".format(key, value))
+        for key, value in synparams.items():
+            exec("cell.netconsynapses[-1].{} = {}".format(key, value))
+            # check that synapses are parameterized correctly
+            if assert_syn_values:
                 try:
                     np.testing.assert_almost_equal(getattr(cell.netconsynapses[-1], key), value)
                 except AssertionError:
@@ -215,7 +213,7 @@ class NetworkCell(TemplateCell):
         """
         Create spike-detecting NetCon object attached to the cell's soma
         midpoint, but this could be extended to having multiple spike-detection
-        sites. The NetCon object created is attached to the cell's netconlist
+        sites. The NetCon object created is attached to the cell's sd_netconlist
         attribute, and will be used by the Network class when creating
         connections between all presynaptic cells and postsynaptic cells on
         each local RANK.
@@ -233,12 +231,12 @@ class NetworkCell(TemplateCell):
         # create new NetCon objects for the connections. Activation times will
         # be triggered on the somatic voltage with a given threshold.
         for sec in self.somalist:
-            self.netconlist.append(neuron.h.NetCon(sec(0.5)._ref_v,
+            self.sd_netconlist.append(neuron.h.NetCon(sec(0.5)._ref_v,
                                                 target,
                                                 sec=sec))
-            self.netconlist[-1].threshold = threshold
-            self.netconlist[-1].weight[0] = weight
-            self.netconlist[-1].delay = delay
+            self.sd_netconlist[-1].threshold = threshold
+            self.sd_netconlist[-1].weight[0] = weight
+            self.sd_netconlist[-1].delay = delay
 
 
 class DummyCell(object):
@@ -288,7 +286,7 @@ class DummyCell(object):
         self.diam = diam
         self.area = area
         self.somainds = somainds
-    
+
     def get_idx(self, section="soma"):
         if section=="soma":
             return self.somainds
@@ -297,7 +295,8 @@ class DummyCell(object):
 
 
 class NetworkPopulation(object):
-    def __init__(self, CWD=None, CELLPATH=None, first_gid=0, Cell=NetworkCell, POP_SIZE=4, name='L5PC',
+    def __init__(self, CWD=None, CELLPATH=None, first_gid=0, Cell=NetworkCell,
+                 POP_SIZE=4, name='L5PC',
                  cell_args=dict(), pop_args=dict(),
                  rotation_args=dict(),
                  OUTPUTPATH='example_parallel_network'):
@@ -436,8 +435,9 @@ class NetworkPopulation(object):
             expected mean depth of somas of population.
         scale : float
             expected standard deviation of depth of somas of population.
-        cap : None or float
-            if float, cap distribution between [loc-cap, loc+cap)
+        cap : None, float or length to list of floats
+            if float, cap distribution between [loc-cap, loc+cap),
+            if list, cap distribution between [loc-cap[0], loc+cap[1]]
 
 
         Returns
@@ -461,9 +461,22 @@ class NetworkPopulation(object):
                 y[i] = (np.random.rand()-0.5)*radius*2
         z = np.random.normal(loc=loc, scale=scale, size=POP_SIZE)
         if cap is not None:
-            while not np.all((z >= loc-cap) & (z < loc+cap)):
-                inds = (z < loc-cap) ^ (z > loc+cap)
-                z[inds] = np.random.normal(loc=loc, scale=scale, size=inds.sum())
+            if type(cap) in [float, np.float, np.float32, np.float64]:
+                while not np.all((z >= loc-cap) & (z < loc+cap)):
+                    inds = (z < loc-cap) ^ (z > loc+cap)
+                    z[inds] = np.random.normal(loc=loc, scale=scale,
+                                               size=inds.sum())
+            elif type(cap) is list:
+                try:
+                    assert(len(cap) == 2)
+                except AssertionError:
+                    raise AssertionError('cap = {} is not a length 2 list'.format(float))
+                while not np.all((z >= loc-cap[0]) & (z < loc+cap[1])):
+                    inds = (z < loc-cap[0]) ^ (z > loc+cap[1])
+                    z[inds] = np.random.normal(loc=loc, scale=scale,
+                                               size=inds.sum())
+            else:
+                raise Exception('cap = {} is not None, a float or length 2 list of floats'.format(float))
 
         soma_pos = []
         for i in range(POP_SIZE):
@@ -591,11 +604,11 @@ class Network(object):
             # target to cell gid
             cell.create_spike_detector(None)
             # assosiate cell gid with the NetCon source
-            self.pc.cell(gid, cell.netconlist[-1])
+            self.pc.cell(gid, cell.sd_netconlist[-1])
 
             # record spike events
             population.spike_vectors.append(neuron.h.Vector())
-            cell.netconlist[-1].record(population.spike_vectors[-1])
+            cell.sd_netconlist[-1].record(population.spike_vectors[-1])
 
         # add population object to dictionary of populations
         self.populations[name] = population
@@ -607,16 +620,12 @@ class Network(object):
     def get_connectivity_rand(self, pre='L5PC', post='L5PC', connprob = 0.2):
         """
         Dummy function creating a (boolean) cell to cell connectivity matrix
-        between pre and postsynaptic populations relying on the use of the
-        'Connection Set Algebra (CSA)' implementation in Python; see
-        https://github.com/INCF/csa, Mikael Djurfeldt (2012) "The Connection-set
-        Algebra---A Novel Formalism for the Representation of Connectivity
-        Structure in Neuronal Network Models" Neuroinformatics 10(3), 1539-2791,
-        http://dx.doi.org/10.1007/s12021-012-9146-1
+        between pre and postsynaptic populations.
 
         Connections are drawn randomly between presynaptic cell gids in
         population 'pre' and postsynaptic cell gids in 'post' on this RANK with
-        a fixed connection probability.
+        a fixed connection probability. self-connections are disabled if
+        presynaptic and postsynaptic populations are the same.
 
         Parameters
         ----------
@@ -632,33 +641,38 @@ class Network(object):
         ndarray, dtype bool
             n_pre x n_post array of connections between n_pre presynaptic
             neurons and n_post postsynaptic neurons on this RANK. Entries
-            with True denotes a connection.        
-        """                
+            with True denotes a connection.
+        """
         n_pre = self.populations[pre].POP_SIZE
-        n_post = self.populations[post].POP_SIZE
-
-        first_gid = self.populations[post].first_gid
         gids = np.array(self.populations[post].gids).astype(int)
 
         # first check if there are any postsyn cells on this RANK
         if gids.size > 0:
             # define incoming connections for cells on this RANK
+            C = np.random.rand(n_pre, gids.size) < connprob
             if pre == post:
-                # avoid self connections
-                c = np.array([x for x in csa.cross(range(n_pre), range(gids.size)) *
-                              (csa.random(connprob) - csa.oneToOne)])
-            else:
-                c = np.array([x for x in csa.cross(range(n_pre), range(gids.size)) *
-                              csa.random(connprob)])
-            if c.ndim == 2:
-                # construct sparse boolean array
-                C = ss.csr_matrix((np.ones(c.shape[0], dtype=bool), (c[:, 0], c[:, 1])),
-                                  shape=(n_pre, gids.size), dtype=bool)                
+                # avoid self connections.
+                gids_pre, gids_post = np.where(C)
+                gids_pre += self.populations[pre].first_gid
+                gids_post *= SIZE # asssume round-robin distribution of gids
+                gids_post += self.populations[post].gids[0]
+                inds = gids_pre == gids_post
+                gids_pre = gids_pre[inds == False]
+                gids_pre -= self.populations[pre].first_gid
+                gids_post = gids_post[inds == False]
+                gids_post -= self.populations[post].gids[0]
+                gids_post //= SIZE
+                c = np.c_[gids_pre, gids_post]
+                # create boolean matrix
+                C = ss.csr_matrix((np.ones(gids_pre.shape[0], dtype=bool),
+                                   (c[:, 0], c[:, 1])),
+                                  shape=(n_pre, gids.size), dtype=bool)
                 return C.toarray()
             else:
-                return np.zeros((n_pre, gids.size), dtype=bool)
+                return C
         else:
             return np.zeros((n_pre, 0), dtype=bool)
+
 
     def connect(self, pre, post, connectivity,
                 syntype=neuron.h.ExpSyn,
@@ -732,10 +746,6 @@ class Network(object):
         # gids of presynaptic neurons:
         pre_gids = np.arange(n0, n0 + self.populations[pre].POP_SIZE)
 
-        # global population sizes
-        n_pre = self.populations[pre].POP_SIZE
-        n_post = self.populations[post].POP_SIZE
-
         # count connections and synapses made on this RANK
         conncount = connectivity.astype(int).sum()
         syncount = 0
@@ -748,6 +758,10 @@ class Network(object):
         for i, (post_gid, cell) in enumerate(zip(self.populations[post].gids, self.populations[post].cells)):
             # do NOT iterate over all possible presynaptic neurons
             for pre_gid in pre_gids[connectivity[:, i]]:
+                # throw a warning if sender neuron is identical to receiving neuron
+                if post_gid == pre_gid:
+                    print('connecting cell w. gid {} to itself (RANK {})'.format(post_gid, RANK))
+
                 # assess number of synapses
                 if multapsefun is None:
                     nidx = 1
@@ -759,8 +773,6 @@ class Network(object):
                         j += 1
                     if j == 1000:
                         raise Exception('change multapseargs as no positive synapse count was found in 1000 trials')
-
-                # print('connecting cell {} to cell {} with {} synapses on RANK {}'.format(pre_gid, post_gid, nidx, RANK))
 
                 # find synapse locations and corresponding section names
                 idxs = cell.get_rand_idx_area_and_distribution_norm(nidx=nidx, **syn_pos_args)
@@ -815,7 +827,7 @@ class Network(object):
         if save_connections:
             if RANK == 0:
                 synData = flattenlist(COMM.gather(syn_idx_pos))
-    
+
                 # convert to structured array
                 dtype = [('gid', 'i8'), ('x', float), ('y', float), ('z', float)]
                 synDataArray = np.empty((len(synData), ), dtype=dtype)
@@ -840,7 +852,6 @@ class Network(object):
                 COMM.gather(syn_idx_pos)
 
         return COMM.bcast([conncount, syncount])
-
 
 
     def simulate(self, electrode=None, rec_imem=False, rec_vmem=False,
@@ -991,6 +1002,8 @@ class Network(object):
                     cell._collect_istim()
                 if len(rec_variables) > 0:
                     cell._collect_rec_variables(rec_variables)
+                if hasattr(cell, 'netstimlist'):
+                    del cell.netstimlist
 
         # Collect spike trains across all RANKs to RANK 0
         for name in self.population_names:
@@ -1031,12 +1044,12 @@ class Network(object):
             for grp in f0.keys():
                 if RANK == 0:
                     f1[grp] = np.zeros(shape, dtype=dtype)
-                for key, value in f0[grp].items(): 
+                for key, value in f0[grp].items():
                     if RANK == 0:
-                        recvbuf = np.zeros(shape)
+                        recvbuf = np.zeros(shape, dtype=np.float)
                     else:
                         recvbuf = None
-                    COMM.Reduce(value.value, recvbuf, op=op, root=0)
+                    COMM.Reduce(value[()].astype(np.float), recvbuf, op=op, root=0)
                     if RANK == 0:
                         f1[grp][key] = recvbuf
             f0.close()
@@ -1072,7 +1085,7 @@ class Network(object):
                 nsegs[i] = [0]
         for i, y in enumerate(nsegs): nsegs[i] = np.sum(y)
         nsegs = np.array(nsegs, dtype=int)
-        
+
         totnsegs = nsegs.sum()
         imem = np.eye(totnsegs)
         xstart = np.array([])
@@ -1086,10 +1099,10 @@ class Network(object):
         zend = np.array([])
         diam = np.array([])
         area = np.array([])
-        
+
         somainds = np.array([], dtype=int)
         nseg = 0
-        
+
         for name in self.population_names:
             for cell in self.populations[name].cells:
                 xstart = np.r_[xstart, cell.xstart]
@@ -1103,7 +1116,7 @@ class Network(object):
                 zend = np.r_[zend, cell.zend]
                 diam = np.r_[diam, cell.diam]
                 area = np.r_[area, cell.area]
-                
+
                 somainds = np.r_[somainds, cell.get_idx("soma")+nseg]
                 nseg += cell.totnsegs
 
@@ -1448,7 +1461,7 @@ def _run_simulation_with_electrode(network, cvode,
                     if use_isyn:
                         RESULTS[j]['isyn_e'][:, tstep] = np.dot(coeffs, imem['isyn_e'])
                         RESULTS[j]['isyn_i'][:, tstep] = np.dot(coeffs, imem['isyn_i'])
-                
+
                 if rec_pop_contributions:
                     for j, coeffs in enumerate(dotprodcoeffs):
                         k = 0 # counter
@@ -1482,7 +1495,7 @@ def _run_simulation_with_electrode(network, cvode,
                             outputfile['OUTPUT[{}]'.format(j)
                                        ][name][:, tstep] = np.dot(coeffs[:, cellinds], imem['imem'][cellinds, ])
                             k += nsegs
-                        
+
             tstep += 1
         neuron.h.fadvance()
         if neuron.h.t % 100. == 0.:

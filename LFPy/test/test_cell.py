@@ -50,166 +50,116 @@ class testCell(unittest.TestCase):
 
         tvec = stickSimulationTesttvec(**stickParams)
         tvec_numpy = np.linspace(0, stickParams['tstop'],
-                    stickParams['tstop']/stickParams['dt'] + 1)
+                    int(stickParams['tstop']/stickParams['dt']) + 1)
 
-        self.assertEqual(tvec.size, tvec_numpy.size)
+        np.testing.assert_equal(tvec, tvec_numpy)
 
     def test_cell_tvec_01(self):
         stickParams = {
             'dt' : 2**-3,
             'tstart' : 0.,
-            'tstop' : 100.,
+            'tstop' : 10000.,
         }
 
         tvec = stickSimulationTesttvec(**stickParams)
         tvec_numpy = np.linspace(0, stickParams['tstop'],
-                    stickParams['tstop']/stickParams['dt'] + 1)
+                    int(stickParams['tstop']/stickParams['dt']) + 1)
 
-        for i in range(tvec.size):
-            self.assertEqual(tvec[i], tvec_numpy[i])
+        np.testing.assert_equal(tvec, tvec_numpy)
 
     def test_cell_tvec_02(self):
         stickParams = {
-            'dt' : 2**-3,
-            'tstart' : 0.,
-            'tstop' : 10000.,
+            'dt' : 0.1,
+            'tstart' : 0,
+            'tstop' : 100,
         }
 
         tvec = stickSimulationTesttvec(**stickParams)
         tvec_numpy = np.linspace(0, stickParams['tstop'],
-                    stickParams['tstop']/stickParams['dt'] + 1)
+                    int(stickParams['tstop']/stickParams['dt']) + 1)
 
-        self.assertEqual(tvec.size, tvec_numpy.size)
+        np.testing.assert_equal(tvec, tvec_numpy)
 
     def test_cell_tvec_03(self):
         stickParams = {
-            'dt' : 2**-3,
-            'tstart' : 0.,
-            'tstop' : 10000.,
+            'dt' : 0.1,
+            'tstart' : 0,
+            'tstop' : 10000,
         }
 
         tvec = stickSimulationTesttvec(**stickParams)
         tvec_numpy = np.linspace(0, stickParams['tstop'],
-                    stickParams['tstop']/stickParams['dt'] + 1)
+                    int(stickParams['tstop']/stickParams['dt']) + 1)
 
-
-        for i in range(tvec.size):
-            self.assertEqual(tvec[i], tvec_numpy[i])
-
+        np.testing.assert_equal(tvec, tvec_numpy)
 
     def test_cell_tvec_04(self):
         stickParams = {
-            'dt' : 0.1,
+            'dt' : 0.2,
             'tstart' : 0,
             'tstop' : 100,
         }
 
         tvec = stickSimulationTesttvec(**stickParams)
         tvec_numpy = np.linspace(0, stickParams['tstop'],
-                    stickParams['tstop']/stickParams['dt'] + 1)
+                    int(stickParams['tstop']/stickParams['dt']) + 1)
 
-        self.assertEqual(tvec.size, tvec_numpy.size)
+        np.testing.assert_equal(tvec, tvec_numpy)
 
     def test_cell_tvec_05(self):
         stickParams = {
-            'dt' : 0.1,
-            'tstart' : 0.,
-            'tstop' : 100.,
-        }
-
-        tvec = stickSimulationTesttvec(**stickParams)
-        tvec_numpy = np.linspace(0, stickParams['tstop'],
-                    stickParams['tstop']/stickParams['dt'] + 1)
-
-        for i in range(tvec.size):
-            self.assertAlmostEqual(tvec[i], tvec_numpy[i])
-
-    def test_cell_tvec_06(self):
-        stickParams = {
-            'dt' : 0.1,
+            'dt' : 0.2,
             'tstart' : 0,
             'tstop' : 10000,
         }
 
         tvec = stickSimulationTesttvec(**stickParams)
         tvec_numpy = np.linspace(0, stickParams['tstop'],
-                    stickParams['tstop']/stickParams['dt'] + 1)
+                    int(stickParams['tstop']/stickParams['dt']) + 1)
 
-        self.assertEqual(tvec.size, tvec_numpy.size)
+        np.testing.assert_equal(tvec, tvec_numpy)
+
+    def test_cell_tvec_06(self):
+        stickParams = {
+            'dt' : 2**-3,
+            'tstart' : -100,
+            'tstop' : 100,
+        }
+
+        tvec = stickSimulationTesttvec(**stickParams)
+        tvec_numpy = np.linspace(0, stickParams['tstop'],
+                    int(stickParams['tstop']/stickParams['dt']) + 1)
+
+        np.testing.assert_equal(tvec, tvec_numpy)
 
     def test_cell_tvec_07(self):
         stickParams = {
-            'dt' : 0.1,
-            'tstart' : 0.,
-            'tstop' : 10000.,
+            'dt' : 2**-3,
+            'tstart' : -100,
+            'tstop' : 10000,
         }
 
         tvec = stickSimulationTesttvec(**stickParams)
         tvec_numpy = np.linspace(0, stickParams['tstop'],
-                    stickParams['tstop']/stickParams['dt'] + 1)
+                    int(stickParams['tstop']/stickParams['dt']) + 1)
 
-        for i in range(tvec.size):
-            self.assertEqual(tvec[i], tvec_numpy[i])
+        np.testing.assert_equal(tvec, tvec_numpy)
 
     def test_cell_tvec_08(self):
         stickParams = {
-            'dt' : 2**-3,
+            'dt' : 0.1,
             'tstart' : -100,
-            'tstop' : 100,
+            'tstop' : 10000,
         }
 
-        tvec = stickSimulationTesttvec(**stickParams)
-        tvec_numpy = np.linspace(0, stickParams['tstop'],
-                    stickParams['tstop']/stickParams['dt'] + 1)
-
-        self.assertEqual(tvec.size, tvec_numpy.size)
-
+        try:
+            stickSimulationTesttvec(**stickParams)
+        except AssertionError:
+            pass
 
     def test_cell_tvec_09(self):
         stickParams = {
-            'dt' : 2**-3,
-            'tstart' : -100,
-            'tstop' : 100,
-        }
-
-        tvec = stickSimulationTesttvec(**stickParams)
-        tvec_numpy = np.linspace(0, stickParams['tstop'],
-                    stickParams['tstop']/stickParams['dt'] + 1)
-
-        for i in range(tvec.size):
-            self.assertEqual(tvec[i], tvec_numpy[i])
-
-    def test_cell_tvec_10(self):
-        stickParams = {
-            'dt' : 2**-3,
-            'tstart' : -100,
-            'tstop' : 10000,
-        }
-
-        tvec = stickSimulationTesttvec(**stickParams)
-        tvec_numpy = np.linspace(0, stickParams['tstop'],
-                    stickParams['tstop']/stickParams['dt'] + 1)
-
-        self.assertEqual(tvec.size, tvec_numpy.size)
-
-
-    def test_cell_tvec_11(self):
-        stickParams = {
-            'dt' : 2**-3,
-            'tstart' : -100,
-            'tstop' : 10000,
-        }
-
-        tvec = stickSimulationTesttvec(**stickParams)
-        tvec_numpy = np.linspace(0, stickParams['tstop'],
-                    stickParams['tstop']/stickParams['dt'] + 1)
-
-        for i in range(tvec.size):
-            self.assertEqual(tvec[i], tvec_numpy[i])
-
-    def test_cell_tvec_12(self):
-        stickParams = {
-            'dt' : 0.1,
+            'dt' : 0.2,
             'tstart' : -100,
             'tstop' : 10000,
         }
@@ -874,6 +824,23 @@ class testCell(unittest.TestCase):
 
     def test_cell_get_axial_currents_from_vmem_09(self):
         '''
+        Check Kirchhoff in 2-comp model where dend 0 is connected to soma 0.
+        '''
+        neuron.h('forall delete_section()')
+        soma = neuron.h.Section(name='soma')
+        dend1 = neuron.h.Section(name='dend1')
+        dend1.connect(soma(0.0), 0)
+        morphology = neuron.h.SectionList()
+        morphology.wholetree()
+        cell = cell_w_synapse_from_sections(morphology)
+        iaxial, d_list, pos_list = cell.get_axial_currents_from_vmem()
+        np.testing.assert_almost_equal(iaxial[0], -cell.imem[0], decimal=9)
+        np.testing.assert_almost_equal(iaxial[0], cell.imem[1], decimal=9)
+        np.testing.assert_allclose(iaxial[0], -cell.imem[0], rtol=1E-3)
+        np.testing.assert_allclose(iaxial[0], cell.imem[1], rtol=1E-3)
+
+    def test_cell_get_axial_currents_from_vmem_10(self):
+        '''
         Check that len(iaxial) = (cell.totnsegs - 1)*2
         '''
         soma = neuron.h.Section(name='soma[0]')
@@ -889,7 +856,7 @@ class testCell(unittest.TestCase):
         iaxial, d_list, pos_list = cell.get_axial_currents_from_vmem()
         self.assertEqual(iaxial.shape[0], (cell.totnsegs - 1)*2)
 
-    def test_cell_get_axial_currents_from_vmem_10(self):
+    def test_cell_get_axial_currents_from_vmem_11(self):
         '''
         Check Kirchhoff in soma when two dends connected to soma mid.
         '''
@@ -908,7 +875,28 @@ class testCell(unittest.TestCase):
         np.testing.assert_almost_equal(-iaxial[0]-iaxial[2]-iaxial[4], cell.imem[0], decimal=9)
         np.testing.assert_allclose(-iaxial[0]-iaxial[2]-iaxial[4], cell.imem[0], rtol=1E-3)
 
-    def test_cell_get_axial_currents_from_vmem_11(self):
+    def test_cell_get_axial_currents_from_vmem_12(self):
+        '''
+        Check Kirchhoff in morph where secs are connected to arc length 0.5.
+        '''
+        morphology = os.path.join(LFPy.__path__[0], 'test', 'sticks_not_connected_head_to_toe.hoc')
+        cell = cell_w_synapse_from_sections(morphology)
+        iaxial, d_list, pos_list = cell.get_axial_currents_from_vmem()
+        np.testing.assert_almost_equal(iaxial[6]+iaxial[10]+cell.imem[3], iaxial[5], decimal=9)
+        np.testing.assert_allclose(iaxial[6]+iaxial[10]+cell.imem[3], iaxial[5], rtol=1E-5)
+
+    def test_cell_get_axial_currents_from_vmem_13(self):
+        '''
+        Check Kirchhoff in morph where secs are connected to arc length 0.7.
+        '''
+        morphology = os.path.join(LFPy.__path__[0], 'test', 'sticks_not_connected_head_to_toe.hoc')
+        cell = cell_w_synapse_from_sections(morphology)
+        iaxial, d_list, pos_list = cell.get_axial_currents_from_vmem()
+        np.testing.assert_almost_equal(iaxial[8]+iaxial[20]+cell.imem[4], iaxial[7], decimal=9)
+        np.testing.assert_allclose(iaxial[8]+iaxial[20]+cell.imem[4], iaxial[7], rtol=1E-5)
+
+
+    def test_cell_get_axial_currents_from_vmem_14(self):
         '''
         Check iaxial current mid positions in three-section stick.
         '''
@@ -919,7 +907,7 @@ class testCell(unittest.TestCase):
         dend1.connect(soma(1), 0)
         dend2.connect(soma(1), 0)
         morphology = neuron.h.SectionList()
-        morphology.wholetree()
+        morphology.wholetree(sec=soma)
         cell = cell_w_synapse_from_sections(morphology)
         iaxial, d_list, pos_list = cell.get_axial_currents_from_vmem()
         new_x = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
@@ -937,11 +925,11 @@ class testCell(unittest.TestCase):
         cell._collect_geometry()
         cell2 = cell_w_synapse_from_sections(morphology)
         iaxial2, d_list2, pos_list2 = cell2.get_axial_currents_from_vmem()
-        mid_current_positions = np.array([[0., 0., 5], [0., 0., 12.5], [0., 0., 5.], [0., 0., 20.]])
+        mid_current_positions = np.array([[0., 0., 5], [0., 0., 20], [0., 0., 5.], [0., 0., 12.5]])
         np.testing.assert_almost_equal(mid_current_positions, pos_list2, decimal=9)
         np.testing.assert_allclose(mid_current_positions, pos_list2, rtol=1E-4)
 
-    def test_cell_get_axial_currents_from_vmem_12(self):
+    def test_cell_get_axial_currents_from_vmem_15(self):
         '''
         Check iaxial current mid positions in ball-n-y.
         '''
@@ -954,7 +942,7 @@ class testCell(unittest.TestCase):
         dend2.connect(dend1(1.), 0)
         dend3.connect(dend1(.5), 0)
         morphology = neuron.h.SectionList()
-        morphology.wholetree()
+        morphology.wholetree(sec=soma)
         cell = cell_w_synapse_from_sections(morphology)
         iaxial1, d_list1, pos_list1 = cell.get_axial_currents_from_vmem()
         new_x = [[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 5, 10]]
@@ -973,10 +961,165 @@ class testCell(unittest.TestCase):
         cell2 = cell_w_synapse_from_sections(morphology)
         iaxial2, d_list2, pos_list2 = cell2.get_axial_currents_from_vmem()
         mid_current_positions = np.array([[0., 0., 5.], [0., 0., 12.5],
-                                          [0., 0., 17.5], [0., 0., 25],
-                                          [0., 0., 15.],[2.5, 0., 15.]])
+                                          [0., 0., 15.], [2.5, 0., 15.],
+                                          [0., 0., 17.5], [0, 0., 25.]])
         np.testing.assert_almost_equal(mid_current_positions, pos_list2, decimal=9)
         np.testing.assert_allclose(mid_current_positions, pos_list2, rtol=1E-4)
+
+    def test_cell_simulate_recorder_00(self):
+        stickParams = {
+            'morphology' : os.path.join(LFPy.__path__[0], 'test', 'stick.hoc'),
+            'cm' : 1,
+            'Ra' : 150,
+            'v_init' : -65,
+            'passive' : True,
+            'passive_parameters' : {'g_pas' : 1./30000, 'e_pas' : -65},
+            'tstart' : 0,
+            'tstop' : 100,
+            'dt' : 2**-4,
+            'nsegs_method' : 'lambda_f',
+            'lambda_f' : 100,
+        }
+
+        stick = LFPy.Cell(**stickParams)
+        stick.simulate(rec_vmem=True, rec_imem=True,
+                       rec_current_dipole_moment=True)
+        self.assertTrue(stick.tvec.size ==
+                        stick.vmem.shape[1] ==
+                        stick.imem.shape[1] ==
+                        stick.current_dipole_moment.shape[0])
+        self.assertTrue(np.all(stick.vmem == stick.v_init))
+        self.assertTrue(np.all(stick.imem == 0.))
+        self.assertTrue(np.all(stick.current_dipole_moment == 0.))
+
+
+    def test_cell_simulate_recorder_01(self):
+        stickParams = {
+            'morphology' : os.path.join(LFPy.__path__[0], 'test', 'stick.hoc'),
+            'cm' : 1,
+            'Ra' : 150,
+            'v_init' : -65,
+            'passive' : True,
+            'passive_parameters' : {'g_pas' : 1./30000, 'e_pas' : -65},
+            'tstart' : 0,
+            'tstop' : 100,
+            'dt' : 0.1,
+            'nsegs_method' : 'lambda_f',
+            'lambda_f' : 100,
+        }
+        stick = LFPy.Cell(**stickParams)
+        stick.simulate(rec_vmem=True, rec_imem=True,
+                       rec_current_dipole_moment=True)
+        self.assertTrue(stick.tvec.size ==
+                        stick.vmem.shape[1] ==
+                        stick.imem.shape[1] ==
+                        stick.current_dipole_moment.shape[0])
+        self.assertTrue(np.all(stick.vmem == stick.v_init))
+        self.assertTrue(np.all(stick.imem == 0.))
+        self.assertTrue(np.all(stick.current_dipole_moment == 0.))
+
+    def test_cell_simulate_recorder_02(self):
+        stickParams = {
+            'morphology' : os.path.join(LFPy.__path__[0], 'test', 'stick.hoc'),
+            'cm' : 1,
+            'Ra' : 150,
+            'v_init' : -65,
+            'passive' : True,
+            'passive_parameters' : {'g_pas' : 1./30000, 'e_pas' : -65},
+            'tstart' : 0,
+            'tstop' : 100,
+            'dt' : 0.2,
+            'nsegs_method' : 'lambda_f',
+            'lambda_f' : 100,
+        }
+        stick = LFPy.Cell(**stickParams)
+        stick.simulate(rec_vmem=True, rec_imem=True,
+                       rec_current_dipole_moment=True)
+        self.assertTrue(stick.tvec.size ==
+                        stick.vmem.shape[1] ==
+                        stick.imem.shape[1] ==
+                        stick.current_dipole_moment.shape[0])
+        self.assertTrue(np.all(stick.vmem == stick.v_init))
+        self.assertTrue(np.all(stick.imem == 0.))
+        self.assertTrue(np.all(stick.current_dipole_moment == 0.))
+
+    def test_cell_simulate_recorder_03(self):
+        stickParams = {
+            'morphology' : os.path.join(LFPy.__path__[0], 'test', 'stick.hoc'),
+            'cm' : 1,
+            'Ra' : 150,
+            'v_init' : -65,
+            'passive' : True,
+            'passive_parameters' : {'g_pas' : 1./30000, 'e_pas' : -65},
+            'tstart' : 0,
+            'tstop' : 10000,
+            'dt' : 2**-4,
+            'nsegs_method' : 'lambda_f',
+            'lambda_f' : 100,
+        }
+
+        stick = LFPy.Cell(**stickParams)
+        stick.simulate(rec_vmem=True, rec_imem=True,
+                       rec_current_dipole_moment=True)
+        self.assertTrue(stick.tvec.size ==
+                        stick.vmem.shape[1] ==
+                        stick.imem.shape[1] ==
+                        stick.current_dipole_moment.shape[0])
+        self.assertTrue(np.all(stick.vmem == stick.v_init))
+        self.assertTrue(np.all(stick.imem == 0.))
+        self.assertTrue(np.all(stick.current_dipole_moment == 0.))
+
+
+    def test_cell_simulate_recorder_04(self):
+        stickParams = {
+            'morphology' : os.path.join(LFPy.__path__[0], 'test', 'stick.hoc'),
+            'cm' : 1,
+            'Ra' : 150,
+            'v_init' : -65,
+            'passive' : True,
+            'passive_parameters' : {'g_pas' : 1./30000, 'e_pas' : -65},
+            'tstart' : 0,
+            'tstop' : 10000,
+            'dt' : 0.1,
+            'nsegs_method' : 'lambda_f',
+            'lambda_f' : 100,
+        }
+        stick = LFPy.Cell(**stickParams)
+        stick.simulate(rec_vmem=True, rec_imem=True,
+                       rec_current_dipole_moment=True)
+        self.assertTrue(stick.tvec.size ==
+                        stick.vmem.shape[1] ==
+                        stick.imem.shape[1] ==
+                        stick.current_dipole_moment.shape[0])
+        self.assertTrue(np.all(stick.vmem == stick.v_init))
+        self.assertTrue(np.all(stick.imem == 0.))
+        self.assertTrue(np.all(stick.current_dipole_moment == 0.))
+
+    def test_cell_simulate_recorder_05(self):
+        stickParams = {
+            'morphology' : os.path.join(LFPy.__path__[0], 'test', 'stick.hoc'),
+            'cm' : 1,
+            'Ra' : 150,
+            'v_init' : -65,
+            'passive' : True,
+            'passive_parameters' : {'g_pas' : 1./30000, 'e_pas' : -65},
+            'tstart' : 0,
+            'tstop' : 10000,
+            'dt' : 0.2,
+            'nsegs_method' : 'lambda_f',
+            'lambda_f' : 100,
+        }
+        stick = LFPy.Cell(**stickParams)
+        stick.simulate(rec_vmem=True, rec_imem=True,
+                       rec_current_dipole_moment=True)
+        self.assertTrue(stick.tvec.size ==
+                        stick.vmem.shape[1] ==
+                        stick.imem.shape[1] ==
+                        stick.current_dipole_moment.shape[0])
+        self.assertTrue(np.all(stick.vmem == stick.v_init))
+        self.assertTrue(np.all(stick.imem == 0.))
+        self.assertTrue(np.all(stick.current_dipole_moment == 0.))
+
 
     def test_cell_simulate_current_dipole_moment_00(self):
         stickParams = {
@@ -1170,6 +1313,9 @@ class testCell(unittest.TestCase):
         electrode1.calc_lfp()
 
         np.testing.assert_allclose(electrode.LFP, electrode1.LFP)
+        self.assertTrue(stick.tvec.size == stick.imem.shape[1] ==
+                        electrode.LFP.shape[1] == electrode1.LFP.shape[1] ==
+                        int(stick.tstop/stick.dt)+1)
 
 
     def test_cell_with_recextelectrode_01(self):
@@ -1217,6 +1363,107 @@ class testCell(unittest.TestCase):
         electrode1.calc_lfp()
 
         np.testing.assert_allclose(electrode.LFP, electrode1.LFP)
+        self.assertTrue(stick.tvec.size == stick.imem.shape[1] ==
+                        electrode.LFP.shape[1] == electrode1.LFP.shape[1] ==
+                        int(stick.tstop/stick.dt)+1)
+
+    def test_cell_with_recextelectrode_02(self):
+        stickParams = {
+            'morphology' : os.path.join(LFPy.__path__[0], 'test', 'stick.hoc'),
+            'cm' : 1,
+            'Ra' : 150,
+            'v_init' : -65,
+            'passive' : True,
+            'passive_parameters' : {'g_pas' : 1./30000, 'e_pas' : -65},
+            'tstart' : 0,
+            'tstop' : 100,
+            'dt' : 0.1,
+            'nsegs_method' : 'lambda_f',
+            'lambda_f' : 100,
+
+        }
+
+        electrodeParams = {
+            'sigma' : 0.3,
+            'x' : np.ones(11) * 100.,
+            'y' : np.zeros(11),
+            'z' : np.linspace(1000, 0, 11),
+            'method' : 'pointsource'
+        }
+
+        stimParams = {
+            'pptype' : 'SinSyn',
+            'delay' : 0.,
+            'dur' : 1000.,
+            'pkamp' : 1.,
+            'freq' : 100.,
+            'phase' : 0,
+            'bias' : 0.,
+            'record_current' : False
+        }
+
+        stick = LFPy.Cell(**stickParams)
+        synapse = LFPy.StimIntElectrode(stick, stick.get_closest_idx(0, 0, 1000),
+                               **stimParams)
+        electrode = LFPy.RecExtElectrode(**electrodeParams)
+        stick.simulate(electrode, rec_imem=True)
+
+        electrode1 = LFPy.RecExtElectrode(cell=stick, **electrodeParams)
+        electrode1.calc_lfp()
+
+        np.testing.assert_allclose(electrode.LFP, electrode1.LFP)
+        self.assertTrue(stick.tvec.size == stick.imem.shape[1] ==
+                        electrode.LFP.shape[1] == electrode1.LFP.shape[1] ==
+                        int(stick.tstop/stick.dt)+1)
+
+    def test_cell_with_recextelectrode_03(self):
+        stickParams = {
+            'morphology' : os.path.join(LFPy.__path__[0], 'test', 'stick.hoc'),
+            'cm' : 1,
+            'Ra' : 150,
+            'v_init' : -65,
+            'passive' : True,
+            'passive_parameters' : {'g_pas' : 1./30000, 'e_pas' : -65},
+            'tstart' : 0,
+            'tstop' : 100,
+            'dt' : 0.2,
+            'nsegs_method' : 'lambda_f',
+            'lambda_f' : 100,
+
+        }
+
+        electrodeParams = {
+            'sigma' : 0.3,
+            'x' : np.ones(11) * 100.,
+            'y' : np.zeros(11),
+            'z' : np.linspace(1000, 0, 11),
+            'method' : 'pointsource'
+        }
+
+        stimParams = {
+            'pptype' : 'SinSyn',
+            'delay' : 0.,
+            'dur' : 1000.,
+            'pkamp' : 1.,
+            'freq' : 100.,
+            'phase' : 0,
+            'bias' : 0.,
+            'record_current' : False
+        }
+
+        stick = LFPy.Cell(**stickParams)
+        synapse = LFPy.StimIntElectrode(stick, stick.get_closest_idx(0, 0, 1000),
+                               **stimParams)
+        electrode = LFPy.RecExtElectrode(**electrodeParams)
+        stick.simulate(electrode, rec_imem=True)
+
+        electrode1 = LFPy.RecExtElectrode(cell=stick, **electrodeParams)
+        electrode1.calc_lfp()
+
+        np.testing.assert_allclose(electrode.LFP, electrode1.LFP)
+        self.assertTrue(stick.tvec.size == stick.imem.shape[1] ==
+                        electrode.LFP.shape[1] == electrode1.LFP.shape[1] ==
+                        int(stick.tstop/stick.dt)+1)
 
     def get_multi_current_dipole_moments00(self):
         neuron.h('forall delete_section()')

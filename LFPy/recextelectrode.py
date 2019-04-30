@@ -20,7 +20,7 @@ import warnings
 import numpy as np
 from . import lfpcalc, tools
 
-class RecExtElectrode:
+class RecExtElectrode(object):
     """class RecExtElectrode
 
     Main class that represents an extracellular electric recording devices such
@@ -34,7 +34,7 @@ class RecExtElectrode:
         extracellular conductivity in units of (S/m). A scalar value implies an
         isotropic extracellular conductivity. If a length 3 list or array of
         floats is provided, these values corresponds to an anisotropic
-        conductor with conductivities [sigma_x, sigma_y, sigma_z] accordingly. 
+        conductor with conductivities [sigma_x, sigma_y, sigma_z] accordingly.
     x, y, z : np.ndarray
         coordinates or arrays of coordinates in units of (um). Must be same length
     N : None or list of lists
@@ -68,13 +68,13 @@ class RecExtElectrode:
 
     Examples
     --------
-
     Compute extracellular potentials after simulating and storage of
     transmembrane currents with the LFPy.Cell class:
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> import LFPy
-
+    >>>
     >>> cellParameters = {
     >>>     'morphology' : 'examples/morphologies/L5_Mainen96_LFPy.hoc',  # morphology file
     >>>     'v_init' : -65,                          # initial voltage
@@ -87,7 +87,7 @@ class RecExtElectrode:
     >>>     'tstop' : 50.,                        # end t of simulation
     >>> }
     >>> cell = LFPy.Cell(**cellParameters)
-
+    >>>
     >>> synapseParameters = {
     >>>     'idx' : cell.get_closest_idx(x=0, y=0, z=800), # compartment
     >>>     'e' : 0,                                # reversal potential
@@ -98,9 +98,9 @@ class RecExtElectrode:
     >>> }
     >>> synapse = LFPy.Synapse(cell, **synapseParameters)
     >>> synapse.set_spike_times(np.array([10., 15., 20., 25.]))
-
+    >>>
     >>> cell.simulate(rec_imem=True)
-
+    >>>
     >>> N = np.empty((16, 3))
     >>> for i in xrange(N.shape[0]): N[i,] = [1, 0, 0] #normal vec. of contacts
     >>> electrodeParameters = {         #parameters for RecExtElectrode class
@@ -121,10 +121,11 @@ class RecExtElectrode:
 
 
     Compute extracellular potentials during simulation (recommended):
+
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> import LFPy
-
+    >>>
     >>> cellParameters = {
     >>>     'morphology' : 'examples/morphologies/L5_Mainen96_LFPy.hoc',  # morphology file
     >>>     'v_init' : -65,                          # initial voltage
@@ -137,7 +138,7 @@ class RecExtElectrode:
     >>>     'tstop' : 50.,                        # end t of simulation
     >>> }
     >>> cell = LFPy.Cell(**cellParameters)
-
+    >>>
     >>> synapseParameters = {
     >>>     'idx' : cell.get_closest_idx(x=0, y=0, z=800), # compartment
     >>>     'e' : 0,                                # reversal potential
@@ -148,7 +149,7 @@ class RecExtElectrode:
     >>> }
     >>> synapse = LFPy.Synapse(cell, **synapseParameters)
     >>> synapse.set_spike_times(np.array([10., 15., 20., 25.]))
-
+    >>>
     >>> N = np.empty((16, 3))
     >>> for i in xrange(N.shape[0]): N[i,] = [1, 0, 0] #normal vec. of contacts
     >>> electrodeParameters = {         #parameters for RecExtElectrode class
@@ -161,9 +162,9 @@ class RecExtElectrode:
     >>>     'N' : N,
     >>> }
     >>> electrode = LFPy.RecExtElectrode(**electrodeParameters)
-
+    >>>
     >>> cell.simulate(electrode=electrode)
-
+    >>>
     >>> plt.matshow(electrode.LFP)
     >>> plt.colorbar()
     >>> plt.axis('tight')
@@ -324,7 +325,8 @@ class RecExtElectrode:
 
         sum_imem = self.cell.imem.sum(axis=0)
         #check if eye matrix is supplied:
-        if np.any(sum_imem == np.ones(self.cell.totnsegs)):
+        if ((self.cell.imem.shape == (self.cell.totnsegs, self.cell.totnsegs))
+            and (np.all(self.cell.imem == np.eye(self.cell.totnsegs)))):
             pass
         else:
             if abs(sum_imem).max() >= tolerance:
@@ -425,7 +427,7 @@ class RecExtElectrode:
                 # when computing the potential, meaning, for a cell, the contribution
                 # to the potential at a contact in r=(x,y,z) will be the sum
                 # E(x,y,z) = E(x,y,z) + \sum_i\in[-n...-1, 1...n] E(x+i*L,y,z)
-                #                     + \sum_j\in[-n...-1, 1...n] E(x,y+j*L,z), 
+                #                     + \sum_j\in[-n...-1, 1...n] E(x,y+j*L,z),
                 # where order n is an integer > 0, L is side length of grid
                 E = []
                 E.append(self.lfp_method(self.cell, x=self.x[i], y=self.y[i], z=self.z[i],
@@ -543,15 +545,15 @@ class RecExtElectrode:
                                           r_limit = self.r_limit,
                                           sigma = self.sigma,
                                           **kwargs
-                                        )    
+                                        )
                 else:
                     # Apply method using periodic boundary conditions in the (x,y) plane
                     # when computing the potential, meaning, for a cell, the contribution
                     # to the potential at a contact in r=(x,y,z) will be the sum
                     # E(x,y,z) = E(x,y,z) + \sum_i\in[-n...-1, 1...n] E(x+i*L,y,z)
-                    #                     + \sum_j\in[-n...-1, 1...n] E(x,y+j*L,z), 
+                    #                     + \sum_j\in[-n...-1, 1...n] E(x,y+j*L,z),
                     # where order n is an integer > 0, L is side length of grid
-                    
+
                     E = []
                     E.append(self.lfp_method(self.cell, x=x_n[j], y=y_n[j], z=z_n[j],
                                                    sigma=self.sigma,
@@ -578,13 +580,12 @@ class RecExtElectrode:
                 if j == 0:
                     lfp_e = tmp
                 else:
-                    lfp_e = np.r_['0,2', lfp_e, tmp]
+                    lfp_e += tmp
 
                 #no longer needed
                 del tmp
 
-            # return the mean potential on the contact
-            return lfp_e.mean(axis=0)
+            return lfp_e / self.n
 
         #loop over contacts
         for i in range(len(self.x)):
@@ -704,7 +705,7 @@ class RecMEAElectrode(RecExtElectrode):
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> import LFPy
-
+    >>>
     >>> cellParameters = {
     >>>     'morphology' : 'examples/morphologies/L5_Mainen96_LFPy.hoc',  # morphology file
     >>>     'v_init' : -65,                          # initial voltage
@@ -729,7 +730,7 @@ class RecMEAElectrode(RecExtElectrode):
     >>> }
     >>> synapse = LFPy.Synapse(cell, **synapseParameters)
     >>> synapse.set_spike_times(np.array([10., 15., 20., 25.]))
-
+    >>>
     >>> MEA_electrode_parameters = {
     >>>     'sigma_T' : 0.3,      # extracellular conductivity
     >>>     'sigma_G' : 0.0,      # MEA glass electrode plate conductivity
@@ -742,9 +743,9 @@ class RecMEAElectrode(RecExtElectrode):
     >>>     "squeeze_cell_factor": 0.3,
     >>> }
     >>> MEA = LFPy.RecMEAElectrode(cell, **MEA_electrode_parameters)
-
+    >>>
     >>> cell.simulate(electrode=MEA)
-
+    >>>
     >>> plt.matshow(MEA.LFP)
     >>> plt.colorbar()
     >>> plt.axis('tight')
@@ -815,19 +816,51 @@ class RecMEAElectrode(RecExtElectrode):
                              "Should be 'soma_as_point', 'linesource' "
                              "or 'pointsource'")
 
-
     def _squeeze_cell_in_depth_direction(self):
         """Will squeeze self.cell centered around the soma by a scaling factor,
         so that it fits inside the slice. If scaling factor is not big enough,
         a RuntimeError is raised. """
-        
+
         self.cell.distort_geometry(factor=self.squeeze_cell_factor)
 
         if (np.max([self.cell.zstart, self.cell.zend]) > self.h + self.z_shift or
-            np.min([self.cell.zstart, self.cell.zend]) < self.z_shif):
-            raise RuntimeError("Squeeze factor not large enough to confine "
-                               "cell to slice. Increase squeeze_cell_factor,"
-                               "move or rotate cell.")
+            np.min([self.cell.zstart, self.cell.zend]) < self.z_shift):
+            bad_comps, reason = self._return_comp_outside_slice()
+            msg = ("Compartments {} of cell ({}) has cell.{} slice. "
+                   "Increase squeeze_cell_factor, move or rotate cell."
+                   ).format(bad_comps, self.cell.morphology, reason)
+
+            raise RuntimeError(msg)
+
+    def _return_comp_outside_slice(self):
+        """
+        Assuming part of the cell is outside the valid region,
+        i.e, not in the slice (self.z_shift < z < self.z_shift + self.h)
+        this function check what array (cell.zstart or cell.zend) that is
+        outside, and if it is above or below the valid region.
+
+        Raises: RuntimeError
+            If no compartment is outside valid region.
+
+        Returns: array, str
+            Numpy array with the compartments that are outside the slice,
+            and a string with additional information on the problem.
+        """
+        zstart_above = np.where(self.cell.zstart > self.z_shift + self.h)[0]
+        zend_above = np.where(self.cell.zend > self.z_shift + self.h)[0]
+        zend_below = np.where(self.cell.zend < self.z_shift)[0]
+        zstart_below = np.where(self.cell.zstart < self.z_shift)[0]
+
+        if len(zstart_above) > 0:
+            return zstart_above, "zstart above"
+        if len(zstart_below) > 0:
+            return zstart_below, "zstart below"
+        if len(zend_above) > 0:
+            return zend_above, "zend above"
+        if len(zend_below) > 0:
+            return zend_below, "zend below"
+        raise RuntimeError("This function should only be called if cell"
+                           "extends outside slice")
 
     def test_cell_extent(self):
         """
@@ -837,25 +870,31 @@ class RecMEAElectrode(RecExtElectrode):
 
         """
         if self.cell is None:
-            raise RuntimeError("Does not have cell instance")
-        if (not np.all(self.z_shift < self.cell.zend) or
-            not np.all(self.cell.zend < self.z_shift + self.h)):
+            raise RuntimeError("Does not have cell instance.")
+
+        if (np.max([self.cell.zstart, self.cell.zend]) > self.z_shift + self.h or
+                np.min([self.cell.zstart, self.cell.zend]) < self.z_shift):
+
             if self.verbose:
-                print("Cell extends outside slice. ")
+                print("Cell extends outside slice.")
 
             if self.squeeze_cell_factor is not None:
                 if not self.z_shift < self.cell.zmid[0] < self.z_shift + self.h:
-                    raise RuntimeError("Soma position is not in slice")
+                    raise RuntimeError("Soma position is not in slice.")
                 self._squeeze_cell_in_depth_direction()
             else:
-                raise RuntimeError("Cell extends outside slice, and argument "
-                                   "squeeze_cell_factor is None")
+                bad_comps, reason = self._return_comp_outside_slice()
+                msg = ("Compartments {} of cell ({}) has cell.{} slice "
+                       "and argument squeeze_cell_factor is None."
+                       ).format(bad_comps, self.cell.morphology, reason)
+                raise RuntimeError(msg)
         else:
             if self.verbose:
-                print("Cell position is good. ")
+                print("Cell position is good.")
             if self.squeeze_cell_factor is not None:
                 if self.verbose:
                     print("Squeezing cell anyway.")
+                self._squeeze_cell_in_depth_direction()
 
     def calc_mapping(self, cell):
         """Creates a linear mapping of transmembrane currents of each segment
