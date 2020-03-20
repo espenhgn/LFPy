@@ -3,7 +3,7 @@ dependencies:
   - python=3.7
   - pip
   - openmpi
-  - x86_64-conda_cos6-linux-gnu-cc
+  - gcc_linux-64
   - pip:
       - numpydoc
       - sphinx==1.8.5
