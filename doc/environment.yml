@@ -1,8 +1,10 @@
 name: lfpy
+channels:
+  - conda-forge
 dependencies:
   - python=3.7
   - pip
-  - neuron=*=mpi_*
+  - neuron
   - pip:
       - numpydoc
       - sphinx==1.8.5
