@@ -2,7 +2,7 @@ name: lfpy
 channels:
   - conda-forge
 dependencies:
-  - python=3.6
+  - python=3.7
   - setuptools
   - numpy
   - matplotlib
@@ -11,6 +11,6 @@ dependencies:
   - cython
   - mpi4py
   - numpydoc
-  - sphinx
+  - sphinx=1.8.5
   - sphinx_rtd_theme
   - neuron
