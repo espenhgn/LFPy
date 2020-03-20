@@ -4,6 +4,7 @@ dependencies:
   - pip
   - mpich
   - gcc_linux-64
+  - pthread
   - pip:
       - numpydoc
       - sphinx==1.8.5
