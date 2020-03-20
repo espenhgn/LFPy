@@ -1,6 +1,7 @@
 name: lfpy
 dependencies:
   - python=3.7
+  - pip
   - pip:
       - numpydoc
       - sphinx==1.8.5

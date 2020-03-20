@@ -33,7 +33,7 @@ extensions = ['sphinx.ext.autodoc',
               'numpydoc']
 
 # mock imports
-autodoc_mock_imports = ["mpi4py", "neuron"]
+autodoc_mock_imports = ["openmpi"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
