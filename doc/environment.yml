@@ -3,5 +3,5 @@ dependencies:
   - python=3.7
   - pip:
       - numpydoc
-      - sphinx=1.8.5
+      - sphinx==1.8.5
       - sphinx_rtd_theme
