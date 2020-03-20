@@ -32,9 +32,6 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
               'numpydoc']
 
-# mock imports
-autodoc_mock_imports = ["openmpi"]
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
