@@ -230,7 +230,9 @@ latex_documents = [
 # WARNING: toctree contains reference to nonexisting document u'LFPy.xxx.xxx'
 numpydoc_show_class_members = False
 
-
+def setup(app):
+    app.add_stylesheet('custom.css')  # may also be an URL
+    
 # -- Options for manual page output --------------------------------------------
 
 # One entry per manual page. List of tuples
