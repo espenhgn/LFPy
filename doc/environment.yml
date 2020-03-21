@@ -1,6 +1,4 @@
 name: lfpy
-channels:
-  - conda-forge
 dependencies:
   - python=3.7
   - pip
@@ -8,7 +6,7 @@ dependencies:
   - gcc_linux-64
   - pthread-stubs
   - mpi4py
-  - sphinx=2.4.1
+  - sphinx>=2.4
   - sphinx_rtd_theme=0.4.3
   - numpydoc=0.9.2
   - pip:
