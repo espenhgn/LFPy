@@ -11,4 +11,3 @@ dependencies:
       - numpy
       - Cython
       - numpydoc
-      - -e ../.
