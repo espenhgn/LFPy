@@ -7,6 +7,7 @@ dependencies:
   - pthread-stubs
   - mpi4py
   - pip:
+      - numpy
       - Cython
       - numpydoc
       - sphinx==1.8.5
