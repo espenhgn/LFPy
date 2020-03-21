@@ -3,6 +3,7 @@ dependencies:
   - python=3.7
   - pip
   - mpich
+  - mpich-mpicc
   - gcc_linux-64
   - pthread-stubs
   - pip:
