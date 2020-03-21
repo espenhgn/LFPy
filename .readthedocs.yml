@@ -10,6 +10,3 @@ build:
 
 conda:
   environment: doc/environment.yml
-
-python:
-  setup_py_install: true
