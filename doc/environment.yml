@@ -1,12 +1,12 @@
 name: lfpy
 dependencies:
-  - python=3.7
+  - python=3.6
   - pip
   - mpich
   - gcc_linux-64
   - pthread-stubs
   - mpi4py
-  - sphinx==1.8.5
+  - sphinx=1.8.5
   - pip:
       - numpy
       - Cython
