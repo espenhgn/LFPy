@@ -6,7 +6,8 @@ dependencies:
   - gcc_linux-64
   - pthread-stubs
   - mpi4py
+  - sphinx==1.8.5
   - pip:
       - numpy
       - Cython
-      
+      - numpydoc
