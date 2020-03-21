@@ -7,8 +7,3 @@ formats: all
 
 conda:
   file: doc/environment.yml
-
-python:
-  version: 3.7
-  install:
-    - requirements: doc/requirements.txt
