@@ -30,7 +30,7 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
         return MagicMock()
 
-MOCK_MODULES = ['neuron']
+MOCK_MODULES = ['neuron', 'mpi4py']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
