@@ -89,10 +89,10 @@ PSET.NMODL = 'hoc_combos_syn.1_0_10.allmods'
 # Simulation control
 ########################################################
 PSET.dt = 2**-4  # simulation time step size (ms)
-PSET.tstop = 1500.  # simulation duration (ms)
+PSET.tstop = 100.  # simulation duration (ms)
 PSET.v_init = -77.  # membrane voltage(s) at t = 0 for all cells
 PSET.celsius = 34.  # global temperature setting affecting active channels
-PSET.TRANSIENT = 500.  # duration of startup transient
+PSET.TRANSIENT = 0.  # duration of startup transient
 
 # population size scaling (multiplied with values in
 # populationParams['POP_SIZE']):
