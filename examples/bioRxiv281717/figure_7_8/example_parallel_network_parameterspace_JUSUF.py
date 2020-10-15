@@ -63,10 +63,10 @@ PSPACES['MPI'].update(dict(
     POP_SIZE_REF=[2560, 512],
 
     # allow different seeds for different network iterations
-    GLOBALSEED=ps.ParameterRange([1234, 65135]), #, 216579876]),
+    GLOBALSEED=ps.ParameterRange([1234, 65135]),  # , 216579876]),
 
     # MPI pool size
-    MPISIZE=ps.ParameterRange([256, 512, 1024]),
+    MPISIZE=ps.ParameterRange([256, 512, 1024, 2048, 3072]),
 
     # bool flag switching LFP calculations on or off (faster)
     COMPUTE_LFP=ps.ParameterRange([False, True]),
@@ -90,7 +90,8 @@ PSPACES['MPI5'].update(dict(
     GLOBALSEED=ps.ParameterRange([1234, 65135]),  # , 216579876]),
 
     # MPI pool size
-    MPISIZE=ps.ParameterRange([1280, 2560, 5120]), #[600, 1200, 2400, 4800]),
+    MPISIZE=ps.ParameterRange([640, 1280, 2560, 5120]),
+    # [600, 1200, 2400, 4800]),
 
     # bool flag switching LFP calculations on or off (faster)
     COMPUTE_LFP=ps.ParameterRange([False, True]),
@@ -102,7 +103,6 @@ PSPACES['MPI5'].update(dict(
     # preserve expected synapse in-degree or total number of connections
     PRESERVE=ps.ParameterRange(['indegree'])
 ))
-
 
 
 # check scaling with population size
@@ -122,14 +122,13 @@ PSPACES['POP'].update(dict(
 
     # population size scaling (multiplied with values in
     # populationParams['POP_SIZE']):
-    POPSCALING=ps.ParameterRange([0.5, 1., 2.]), # [0.2, 0.25, 0.5, 1.,]), #2.0, 4.0]),
+    POPSCALING=ps.ParameterRange([1. / 6., 1. / 3., 0.5, 1., 2., 4.]),
+    # [0.2, 0.25, 0.5, 1.,]), #2.0, 4.0]),
 
     # preserve expected synapse in-degree or total number of connections
     # across population scalings
     PRESERVE=ps.ParameterRange(['total', 'indegree'])
 ))
-
-
 
 
 PSPACES['POP5'] = ps.ParameterSpace(dict())
@@ -148,13 +147,13 @@ PSPACES['POP5'].update(dict(
 
     # population size scaling (multiplied with values in
     # populationParams['POP_SIZE']):
-    POPSCALING=ps.ParameterRange([0.5, 1., 2.]),  # [0.2, 0.25, 0.5, 1., 2.0, 4.0]),
+    POPSCALING=ps.ParameterRange([1. / 6., 1. / 3., 0.5, 1., 2., 4.]),
+    # [0.2, 0.25, 0.5, 1., 2.0, 4.0]),
 
     # preserve expected synapse in-degree or total number of connections
     # across population scalings
     PRESERVE=ps.ParameterRange(['total', 'indegree'])
 ))
-
 
 
 # PSPACES['TEST'] = ps.ParameterSpace(dict())

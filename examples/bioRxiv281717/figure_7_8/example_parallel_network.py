@@ -227,7 +227,7 @@ if __name__ == '__main__':
 
     # set reference network size
     PSET.populationParameters['POP_SIZE'] = (
-        np.array(PSET.POP_SIZE_REF) * PSET.POPSCALING).astype(int)
+        np.round(np.array(PSET.POP_SIZE_REF) * PSET.POPSCALING)).astype(int)
 
     # adjust connection probabilities to keep indegrees similar across sims
     for i, N_pre in enumerate(PSET.populationParameters['POP_SIZE']):
