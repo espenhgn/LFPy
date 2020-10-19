@@ -283,7 +283,7 @@ if __name__ == '__main__':
                         ps_id, wt, logfile, logfile, N, pset.MPISIZE,
                         mem_per_cpu, ps_id)
                 elif os.environ['HOSTNAME'].rfind('jusuf') >= 0:  # JUSUF
-                    ACCOUNT=os.getenv('PROJECT').split('/')[-1]
+                    ACCOUNT = os.getenv('PROJECT').split('/')[-1]
                     NPERNODE = 128
                     N = int(pset.MPISIZE // NPERNODE)
                     jobscript = jobscript_jusuf.format(
